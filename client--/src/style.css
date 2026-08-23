@@ -253,3 +253,34 @@ body, html {
     color: var(--btn-green);
     text-decoration: none;
 }
+
+/* Campus Life Grid */
+.campus-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+}
+.campus-card {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+.campus-card:hover {
+    transform: translateY(-5px);
+}
+.campus-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+.campus-card .caption {
+    padding: 15px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
