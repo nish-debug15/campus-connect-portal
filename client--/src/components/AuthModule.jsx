@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 
-export default function Register() {
-  const [role, setRole] = useState('student');
+export default function AuthModule({ initialMode = 'login' }) {
+  const [mode, setMode] = useState(initialMode); // 'login' or 'register'
+  const [role, setRole] = useState('student'); // 'student' or 'teacher'
   const navigate = useNavigate();
 
-  const handleRegister = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
+    // Redirect based on role on successful auth
     if (role === 'student') {
       navigate('/student/dashboard');
     } else {
@@ -29,7 +31,7 @@ export default function Register() {
 
       <div className="auth-container">
         <div className="auth-card">
-          <h2>Create an Account</h2>
+          <h2>{mode === 'login' ? 'Welcome Back' : 'Create an Account'}</h2>
           
           <div className="role-selector">
             <button 
@@ -48,17 +50,20 @@ export default function Register() {
             </button>
           </div>
 
-          <form onSubmit={handleRegister}>
-            <div className="form-group">
-              <label htmlFor="name">Full Name</label>
-              <input type="text" id="name" required placeholder="Enter your full name" />
-            </div>
+          <form onSubmit={handleSubmit}>
+            {mode === 'register' && (
+              <div className="form-group">
+                <label htmlFor="name">Full Name</label>
+                <input type="text" id="name" required placeholder="Enter your full name" />
+              </div>
+            )}
+            
             <div className="form-group">
               <label htmlFor="email">Email</label>
               <input type="email" id="email" required placeholder="Enter your email" />
             </div>
             
-            {role === 'student' && (
+            {mode === 'register' && role === 'student' && (
               <div className="student-fields active">
                 <div className="form-group">
                   <label htmlFor="usn">USN (University Seat Number)</label>
@@ -86,7 +91,7 @@ export default function Register() {
               </div>
             )}
 
-            {role === 'teacher' && (
+            {mode === 'register' && role === 'teacher' && (
               <div className="teacher-fields active">
                 <div className="form-group">
                   <label htmlFor="empId">Employee ID</label>
@@ -107,14 +112,20 @@ export default function Register() {
 
             <div className="form-group">
               <label htmlFor="password">Password</label>
-              <input type="password" id="password" required placeholder="Create a password" />
+              <input type="password" id="password" required placeholder={mode === 'login' ? 'Enter your password' : 'Create a password'} />
             </div>
             
-            <button type="submit" className="btn-submit">Register</button>
+            <button type="submit" className="btn-submit">
+              {mode === 'login' ? 'Login' : 'Register'}
+            </button>
           </form>
           
           <div className="auth-links">
-            <p>Already have an account? <Link to="/login">Login here</Link></p>
+            {mode === 'login' ? (
+              <p>Don't have an account? <span style={{color: 'var(--btn-green)', cursor: 'pointer', textDecoration: 'underline'}} onClick={() => setMode('register')}>Register here</span></p>
+            ) : (
+              <p>Already have an account? <span style={{color: 'var(--btn-green)', cursor: 'pointer', textDecoration: 'underline'}} onClick={() => setMode('login')}>Login here</span></p>
+            )}
           </div>
         </div>
       </div>
