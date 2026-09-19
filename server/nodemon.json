@@ -1,5 +1,6 @@
 {
   "ignore": [
-    "data/users.json"
+    "data/users.json",
+    "data/tokens.json"
   ]
 }

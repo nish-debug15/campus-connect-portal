@@ -59,9 +59,9 @@ export const authAPI = {
 
 // Classroom API endpoints
 export const classroomAPI = {
-  connect: () => {
-    // Redirect to backend OAuth route
-    window.location.href = `${baseURL}/classroom/connect`;
+  connect: async () => {
+    const response = await api.get('/classroom/connect-url');
+    window.location.href = response.data.url;
   },
   status: async () => {
     const response = await api.get('/classroom/status');

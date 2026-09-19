@@ -181,6 +181,7 @@ export default function Dashboard() {
                   classroomData.notices.map(notice => (
                     <div key={notice.id} className="auth-card" style={{ maxWidth: '100%', padding: '25px', borderLeft: '4px solid var(--primary-green)' }}>
                       <h3 style={{ marginTop: 0, color: '#333' }}>{notice.title}</h3>
+                      {notice.courseName && <p style={{ color: 'var(--primary-green)', fontSize: '0.85rem', fontWeight: 'bold', margin: '5px 0' }}>{notice.courseName}</p>}
                       <p style={{ color: '#777', fontSize: '0.85rem' }}>Posted: {notice.date}</p>
                       <p style={{ marginBottom: 0 }}>Synced from Google Classroom.</p>
                     </div>
@@ -204,6 +205,7 @@ export default function Dashboard() {
                   classroomData.assignments.map(assn => (
                     <div key={assn.id} className="auth-card" style={{ maxWidth: '100%', padding: '25px', borderTop: '4px solid #e74c3c' }}>
                       <h3 style={{ marginTop: 0, color: '#333' }}>{assn.title}</h3>
+                      {assn.courseName && <p style={{ color: 'var(--primary-green)', fontSize: '0.85rem', fontWeight: 'bold', margin: '5px 0' }}>{assn.courseName}</p>}
                       <p style={{ color: '#777', fontSize: '0.85rem' }}>Due: {assn.due}</p>
                       <button className="btn-secondary" style={{ width: '100%', marginTop: '10px' }}>View Details</button>
                     </div>

@@ -1,6 +1,8 @@
 const { google } = require('googleapis');
+const fs = require('fs');
+const path = require('path');
 
-// Note: In a real app, you would load these from process.env
+// We need valid credentials from .env to actually use Google API.
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'mock_client_id';
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'mock_client_secret';
 const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/classroom/callback';
@@ -17,62 +19,171 @@ const SCOPES = [
   'https://www.googleapis.com/auth/classroom.coursework.me.readonly'
 ];
 
-// In-memory token storage: { userId: tokens }
-const userTokens = {};
+// Token storage file
+const tokensFile = path.join(__dirname, '..', 'data', 'tokens.json');
 
-exports.connect = (req, res) => {
-  // In a real flow, we'd pass the userId in state or session
-  // For demo, we just generate the URL
-  const authUrl = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-    // state: req.user.userId
-  });
-  res.redirect(authUrl);
+const getStoredTokens = () => {
+  try {
+    if (!fs.existsSync(tokensFile)) return {};
+    const data = fs.readFileSync(tokensFile, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    console.error('Error reading tokens file:', err);
+    return {};
+  }
+};
+
+const saveTokens = (tokensObj) => {
+  try {
+    if (!fs.existsSync(path.dirname(tokensFile))) {
+      fs.mkdirSync(path.dirname(tokensFile), { recursive: true });
+    }
+    fs.writeFileSync(tokensFile, JSON.stringify(tokensObj, null, 2));
+  } catch (err) {
+    console.error('Error writing tokens file:', err);
+  }
+};
+
+exports.getConnectUrl = (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: SCOPES,
+      state: userId,
+      prompt: 'consent' // Forces Google to provide a refresh token
+    });
+    
+    res.json({ url: authUrl });
+  } catch (err) {
+    console.error('Error generating auth URL:', err);
+    res.status(500).json({ error: 'Failed to generate connection URL' });
+  }
 };
 
 exports.callback = async (req, res) => {
-  const { code } = req.query;
-  // If we had state, we'd extract userId here
+  const { code, state } = req.query;
+  const userId = state; // We passed userId in the state parameter
+  
+  if (!code || !userId) {
+    return res.redirect('http://localhost:5173/dashboard?classroom_connected=false&error=invalid_request');
+  }
   
   try {
-    // const { tokens } = await oauth2Client.getToken(code);
-    // userTokens[userId] = tokens;
+    // If using mock credentials, this will throw an error
+    const { tokens } = await oauth2Client.getToken(code);
     
-    // For demo purposes since we lack real credentials, we will just mock success
+    const allTokens = getStoredTokens();
+    allTokens[userId] = tokens;
+    saveTokens(allTokens);
+    
     res.redirect('http://localhost:5173/dashboard?classroom_connected=true');
   } catch (error) {
-    console.error('Error authenticating with Google', error);
-    res.redirect('http://localhost:5173/dashboard?classroom_connected=false');
+    console.error('Error authenticating with Google:', error.message);
+    res.redirect('http://localhost:5173/dashboard?classroom_connected=false&error=oauth_failed');
   }
 };
 
 exports.status = (req, res) => {
-  // Mock status endpoint
   const userId = req.user.userId;
-  // const isConnected = !!userTokens[userId];
+  const allTokens = getStoredTokens();
   
-  // For demo, we return true if they hit connect earlier, but let's just say true
-  res.json({ connected: true });
+  // Return true if we have tokens stored for this user
+  res.json({ connected: !!allTokens[userId] });
 };
 
 exports.sync = async (req, res) => {
   try {
-    // Mock sync data
-    const mockData = {
-      notices: [
-        { id: 1, title: 'Final Project Deadline Extended', date: '2026-09-20' },
-        { id: 2, title: 'Guest Lecture on AI Ethics', date: '2026-09-22' }
-      ],
-      assignments: [
-        { id: 1, title: 'React Frontend Implementation', due: '2026-09-25' },
-        { id: 2, title: 'Database Normalization Essay', due: '2026-09-30' }
-      ]
-    };
+    const userId = req.user.userId;
+    const allTokens = getStoredTokens();
+    const userTokens = allTokens[userId];
     
-    res.json(mockData);
+    if (!userTokens) {
+      return res.status(401).json({ error: 'Google Classroom not connected' });
+    }
+    
+    oauth2Client.setCredentials(userTokens);
+    
+    // Automatically save updated tokens if refreshed
+    oauth2Client.on('tokens', (tokens) => {
+      if (tokens.refresh_token) {
+        userTokens.refresh_token = tokens.refresh_token;
+      }
+      userTokens.access_token = tokens.access_token;
+      userTokens.expiry_date = tokens.expiry_date;
+      const tks = getStoredTokens();
+      tks[userId] = userTokens;
+      saveTokens(tks);
+    });
+
+    const classroom = google.classroom({ version: 'v1', auth: oauth2Client });
+    
+    // 1. Fetch active courses
+    const coursesRes = await classroom.courses.list({
+      studentId: 'me',
+      courseStates: ['ACTIVE']
+    });
+    
+    const courses = coursesRes.data.courses || [];
+    const notices = [];
+    const assignments = [];
+    
+    // 2. Fetch announcements & coursework for up to 5 courses (to avoid hitting rate limits easily)
+    const activeCourses = courses.slice(0, 5);
+    
+    for (const course of activeCourses) {
+      // Announcements
+      try {
+        const annRes = await classroom.courses.announcements.list({
+          courseId: course.id,
+          pageSize: 3
+        });
+        if (annRes.data.announcements) {
+          annRes.data.announcements.forEach(a => {
+            notices.push({
+              id: a.id,
+              title: a.text ? (a.text.substring(0, 60) + (a.text.length > 60 ? '...' : '')) : 'New Announcement',
+              date: new Date(a.creationTime).toLocaleDateString(),
+              courseName: course.name
+            });
+          });
+        }
+      } catch (e) {
+        console.error(`Error fetching announcements for ${course.name}:`, e.message);
+      }
+      
+      // Coursework
+      try {
+        const cwRes = await classroom.courses.courseWork.list({
+          courseId: course.id,
+          pageSize: 5
+        });
+        if (cwRes.data.courseWork) {
+          cwRes.data.courseWork.forEach(cw => {
+            let dueStr = 'No due date';
+            if (cw.dueDate) {
+              const { year, month, day } = cw.dueDate;
+              dueStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            }
+            assignments.push({
+              id: cw.id,
+              title: cw.title,
+              due: dueStr,
+              courseName: course.name
+            });
+          });
+        }
+      } catch (e) {
+        console.error(`Error fetching coursework for ${course.name}:`, e.message);
+      }
+    }
+    
+    // Sort notices by newest first (assuming date strings are somewhat sortable, though ISO is better. We'll use simple sort for now)
+    res.json({ notices, assignments });
+    
   } catch (error) {
-    console.error(error);
+    console.error('Failed to sync classroom data:', error);
     res.status(500).json({ error: 'Failed to sync classroom data' });
   }
 };
