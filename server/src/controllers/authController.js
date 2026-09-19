@@ -1,8 +1,31 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
 
-// In-memory database array (as requested)
-let users = [];
+const usersFile = path.join(__dirname, '..', 'data', 'users.json');
+
+// Ensure data directory and file exist
+if (!fs.existsSync(path.dirname(usersFile))) {
+  fs.mkdirSync(path.dirname(usersFile), { recursive: true });
+}
+if (!fs.existsSync(usersFile)) {
+  fs.writeFileSync(usersFile, JSON.stringify([]));
+}
+
+const readUsers = () => {
+  try {
+    const data = fs.readFileSync(usersFile, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    console.error('Error reading users file:', err);
+    return [];
+  }
+};
+
+const saveUsers = (users) => {
+  fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+};
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_for_dev_only';
 
@@ -15,6 +38,8 @@ exports.register = async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase();
+    
+    const users = readUsers();
     
     // Check duplicate
     const existingUser = users.find(u => u.email === normalizedEmail);
@@ -42,6 +67,7 @@ exports.register = async (req, res) => {
     };
 
     users.push(newUser);
+    saveUsers(users);
 
     // Generate JWT
     const token = jwt.sign(
@@ -69,6 +95,7 @@ exports.login = async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase();
+    const users = readUsers();
     const user = users.find(u => u.email === normalizedEmail);
 
     if (!user) {

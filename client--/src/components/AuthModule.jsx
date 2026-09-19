@@ -25,6 +25,13 @@ export default function AuthModule({ initialMode = 'login' }) {
   const [rememberMe, setRememberMe] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
+  React.useEffect(() => {
+    const session = getSession();
+    if (session && session.user) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
