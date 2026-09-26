@@ -2,7 +2,6 @@ const { google } = require('googleapis');
 const fs = require('fs');
 const path = require('path');
 
-// We need valid credentials from .env to actually use Google API.
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'mock_client_id';
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'mock_client_secret';
 const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/classroom/callback';
