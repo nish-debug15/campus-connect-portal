@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router';
-import { authAPI, saveSession } from '../api';
+import { authAPI, saveSession, getSession } from '../api';
 
 export default function AuthModule({ initialMode = 'login' }) {
   const [mode, setMode] = useState(initialMode); // 'login' or 'register'
@@ -19,13 +19,20 @@ export default function AuthModule({ initialMode = 'login' }) {
     empId: '',
     department: 'SoCSE'
   });
-  
+
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  React.useEffect(() => {
+  // Sync mode whenever initialMode prop changes (e.g. user navigates between /login and /register)
+  useEffect(() => {
+    setMode(initialMode);
+    setError(null);
+  }, [initialMode]);
+
+  // If already logged in, redirect to dashboard
+  useEffect(() => {
     const session = getSession();
     if (session && session.user) {
       navigate('/dashboard');
@@ -49,29 +56,40 @@ export default function AuthModule({ initialMode = 'login' }) {
         if (!termsAccepted) {
           throw new Error("You must accept the terms and conditions");
         }
-        
+
         const res = await authAPI.register({
           ...formData,
           role
         });
-        
+
         saveSession({ token: res.token, user: res.user, role: res.user.role });
         navigate('/dashboard');
-        
       } else {
         const res = await authAPI.login({
           email: formData.email,
           password: formData.password
         });
-        
+
         saveSession({ token: res.token, user: res.user, role: res.user.role });
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.error || err.message || "An error occurred");
+      setError(err.response?.data?.error || err.message || "An error occurred during authentication");
     } finally {
       setLoading(false);
     }
+  };
+
+  const switchToRegister = () => {
+    setMode('register');
+    setError(null);
+    navigate('/register');
+  };
+
+  const switchToLogin = () => {
+    setMode('login');
+    setError(null);
+    navigate('/login');
   };
 
   return (
@@ -80,34 +98,46 @@ export default function AuthModule({ initialMode = 'login' }) {
         <div className="logo-group">
           <div className="brand-badge">RV</div>
           <div>
-            <a href="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-                <h1 className="university-name">RV UNIVERSITY<sup>®</sup></h1>
-            </a>
+            <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <h1 className="university-name">RV UNIVERSITY<sup>®</sup></h1>
+            </Link>
           </div>
+        </div>
+        <div className="nav-actions">
+          <Link to="/" className="btn-secondary">Home</Link>
+          {mode === 'login' ? (
+            <button onClick={switchToRegister} className="btn-primary">Register</button>
+          ) : (
+            <button onClick={switchToLogin} className="btn-primary">Login</button>
+          )}
         </div>
       </header>
 
       <div className="auth-container">
         <div className="auth-card">
           <h2>{mode === 'login' ? 'Welcome Back' : 'Create an Account'}</h2>
-          
-          {error && <div style={{ color: 'white', backgroundColor: '#e74c3c', padding: '10px', borderRadius: '4px', marginBottom: '15px', textAlign: 'center' }}>{error}</div>}
+
+          {error && (
+            <div style={{ color: 'white', backgroundColor: '#e74c3c', padding: '12px', borderRadius: '6px', marginBottom: '18px', textAlign: 'center', fontSize: '0.95rem' }}>
+              {error}
+            </div>
+          )}
 
           {mode === 'register' && (
             <div className="role-selector">
-              <button 
+              <button
                 type="button"
-                className={`role-btn ${role === 'student' ? 'active' : ''}`} 
+                className={`role-btn ${role === 'student' ? 'active' : ''}`}
                 onClick={() => setRole('student')}
               >
-                Student
+                🎓 Student
               </button>
-              <button 
+              <button
                 type="button"
-                className={`role-btn ${role === 'faculty' ? 'active' : ''}`} 
+                className={`role-btn ${role === 'faculty' ? 'active' : ''}`}
                 onClick={() => setRole('faculty')}
               >
-                Faculty
+                👨‍🏫 Faculty
               </button>
             </div>
           )}
@@ -116,23 +146,44 @@ export default function AuthModule({ initialMode = 'login' }) {
             {mode === 'register' && (
               <div className="form-group">
                 <label htmlFor="name">Full Name</label>
-                <input type="text" id="name" required placeholder="Enter your full name" value={formData.name} onChange={handleChange} />
+                <input
+                  type="text"
+                  id="name"
+                  required
+                  placeholder="e.g. Nishit Sharma"
+                  value={formData.name}
+                  onChange={handleChange}
+                />
               </div>
             )}
-            
+
             <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input type="email" id="email" required placeholder="Enter your email" value={formData.email} onChange={handleChange} />
+              <label htmlFor="email">University Email</label>
+              <input
+                type="email"
+                id="email"
+                required
+                placeholder="e.g. name@rvu.edu.in"
+                value={formData.email}
+                onChange={handleChange}
+              />
             </div>
-            
+
             {mode === 'register' && role === 'student' && (
               <div className="student-fields active">
                 <div className="form-group">
                   <label htmlFor="usn">USN (University Seat Number)</label>
-                  <input type="text" id="usn" required placeholder="e.g. 1RV21CS001" value={formData.usn} onChange={handleChange} />
+                  <input
+                    type="text"
+                    id="usn"
+                    required
+                    placeholder="e.g. 1RV21CS001"
+                    value={formData.usn}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="branch">Branch</label>
+                  <label htmlFor="branch">School / Branch</label>
                   <select id="branch" value={formData.branch} onChange={handleChange}>
                     <option value="SoCSE">School of Computer Science & Engineering</option>
                     <option value="SoB">School of Business</option>
@@ -156,8 +207,15 @@ export default function AuthModule({ initialMode = 'login' }) {
             {mode === 'register' && role === 'faculty' && (
               <div className="teacher-fields active">
                 <div className="form-group">
-                  <label htmlFor="empId">Employee ID</label>
-                  <input type="text" id="empId" required placeholder="Enter Employee ID" value={formData.empId} onChange={handleChange} />
+                  <label htmlFor="empId">Faculty Employee ID</label>
+                  <input
+                    type="text"
+                    id="empId"
+                    required
+                    placeholder="e.g. RVU-FAC-104"
+                    value={formData.empId}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="form-group">
                   <label htmlFor="department">Department</label>
@@ -174,47 +232,93 @@ export default function AuthModule({ initialMode = 'login' }) {
 
             <div className="form-group">
               <label htmlFor="password">Password</label>
-              <input type="password" id="password" required placeholder={mode === 'login' ? 'Enter your password' : 'Create a password'} value={formData.password} onChange={handleChange} />
+              <input
+                type="password"
+                id="password"
+                required
+                placeholder={mode === 'login' ? 'Enter your password' : 'Create a secure password'}
+                value={formData.password}
+                onChange={handleChange}
+              />
             </div>
 
             {mode === 'register' && (
               <div className="form-group">
                 <label htmlFor="confirmPassword">Confirm Password</label>
-                <input type="password" id="confirmPassword" required placeholder="Confirm your password" value={formData.confirmPassword} onChange={handleChange} />
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  required
+                  placeholder="Re-enter your password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                />
               </div>
             )}
-            
+
             {mode === 'login' && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', fontSize: '0.9rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', fontWeight: 'normal' }}>
-                  <input type="checkbox" style={{ width: 'auto', marginRight: '8px' }} checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', fontSize: '0.9rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', fontWeight: 'normal', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    style={{ width: 'auto', marginRight: '8px' }}
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
                   Remember me
                 </label>
-                <a href="#" style={{ color: 'var(--btn-green)', textDecoration: 'none' }}>Forgot Password?</a>
+                <a href="#forgot" onClick={(e) => { e.preventDefault(); alert('Please contact campus IT admin at support@rvu.edu.in to reset your password.'); }} style={{ color: 'var(--btn-green)', textDecoration: 'none' }}>
+                  Forgot Password?
+                </a>
               </div>
             )}
 
             {mode === 'register' && (
               <div style={{ marginBottom: '20px', fontSize: '0.9rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', fontWeight: 'normal' }}>
-                  <input type="checkbox" style={{ width: 'auto', marginRight: '8px' }} checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} />
-                  I accept the Terms and Conditions
+                <label style={{ display: 'flex', alignItems: 'center', fontWeight: 'normal', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    style={{ width: 'auto', marginRight: '8px' }}
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                  />
+                  I accept the RV University IT policy & conditions
                 </label>
               </div>
             )}
-            
+
             <button type="submit" className="btn-submit" disabled={loading}>
-              {loading ? 'Processing...' : (mode === 'login' ? 'Login' : 'Register')}
+              {loading ? 'Processing...' : (mode === 'login' ? 'Login' : 'Create Account')}
             </button>
           </form>
-          
+
           <div className="auth-links">
             {mode === 'login' ? (
-              <p>Don't have an account? <span style={{color: 'var(--btn-green)', cursor: 'pointer', textDecoration: 'underline'}} onClick={() => {setMode('register'); setError(null);}}>Register here</span></p>
+              <p>
+                Don't have an account?{' '}
+                <span
+                  style={{ color: 'var(--btn-green)', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}
+                  onClick={switchToRegister}
+                >
+                  Register here
+                </span>
+              </p>
             ) : (
-              <p>Already have an account? <span style={{color: 'var(--btn-green)', cursor: 'pointer', textDecoration: 'underline'}} onClick={() => {setMode('login'); setError(null);}}>Login here</span></p>
+              <p>
+                Already have an account?{' '}
+                <span
+                  style={{ color: 'var(--btn-green)', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}
+                  onClick={switchToLogin}
+                >
+                  Login here
+                </span>
+              </p>
             )}
-            <p style={{ marginTop: '10px' }}><a href="/" style={{ color: 'var(--text-gray)' }}>← Back to Campus Home</a></p>
+            <p style={{ marginTop: '15px' }}>
+              <Link to="/" style={{ color: 'var(--text-gray)', textDecoration: 'none' }}>
+                ← Back to Campus Home
+              </Link>
+            </p>
           </div>
         </div>
       </div>

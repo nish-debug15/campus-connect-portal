@@ -1,1 +1,15 @@
-[]
+[
+  {
+    "id": "1792642918934",
+    "name": "Test Student",
+    "email": "student@rvu.edu.in",
+    "password": "$2b$10$/ISkwYk3sEdzmQzwSYB2Ue5KrVlPm/qHnr9QTBgNg/s9cXAUqD4iG",
+    "role": "student",
+    "usn": "1RV21CS001",
+    "branch": "SoCSE",
+    "year": "3",
+    "empId": null,
+    "department": null,
+    "createdAt": "2026-10-22T04:21:58.934Z"
+  }
+]
