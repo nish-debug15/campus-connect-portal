@@ -4,7 +4,7 @@ import { authAPI, saveSession, getSession } from '../api';
 
 export default function AuthModule({ initialMode = 'login' }) {
   const [mode, setMode] = useState(initialMode); // 'login' or 'register'
-  const [role, setRole] = useState('student'); // 'student' or 'faculty'
+  const [role, setRole] = useState('student'); // 'student', 'faculty', 'admin'
   const navigate = useNavigate();
 
   // Form State
@@ -41,6 +41,16 @@ export default function AuthModule({ initialMode = 'login' }) {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const fillDemoAccount = (roleType) => {
+    if (roleType === 'student') {
+      setFormData((prev) => ({ ...prev, email: 'student@rvu.edu.in', password: 'password123' }));
+    } else if (roleType === 'faculty') {
+      setFormData((prev) => ({ ...prev, email: 'faculty@rvu.edu.in', password: 'faculty123' }));
+    } else if (roleType === 'admin') {
+      setFormData((prev) => ({ ...prev, email: 'admin@rvu.edu.in', password: 'admin123' }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -117,6 +127,38 @@ export default function AuthModule({ initialMode = 'login' }) {
         <div className="auth-card">
           <h2>{mode === 'login' ? 'Welcome Back' : 'Create an Account'}</h2>
 
+          {/* Quick Demo Credentials Autofill Banner (Only on Login) */}
+          {mode === 'login' && (
+            <div style={{ backgroundColor: '#f1f8e9', border: '1px solid #c8e6c9', borderRadius: '8px', padding: '12px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#2e7d32', marginBottom: '8px', textAlign: 'center' }}>
+                ⚡ QUICK DEMO LOGINS (Click to Auto-fill):
+              </div>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => fillDemoAccount('student')}
+                  style={{ fontSize: '0.75rem', padding: '5px 10px', borderRadius: '15px', border: '1px solid #2e7d32', backgroundColor: 'white', color: '#2e7d32', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  🎓 Student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillDemoAccount('faculty')}
+                  style={{ fontSize: '0.75rem', padding: '5px 10px', borderRadius: '15px', border: '1px solid #1565c0', backgroundColor: 'white', color: '#1565c0', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  👨‍🏫 Faculty
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillDemoAccount('admin')}
+                  style={{ fontSize: '0.75rem', padding: '5px 10px', borderRadius: '15px', border: '1px solid #b71c1c', backgroundColor: 'white', color: '#b71c1c', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  🏛️ Admin
+                </button>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div style={{ color: 'white', backgroundColor: '#e74c3c', padding: '12px', borderRadius: '6px', marginBottom: '18px', textAlign: 'center', fontSize: '0.95rem' }}>
               {error}
@@ -138,6 +180,13 @@ export default function AuthModule({ initialMode = 'login' }) {
                 onClick={() => setRole('faculty')}
               >
                 👨‍🏫 Faculty
+              </button>
+              <button
+                type="button"
+                className={`role-btn ${role === 'admin' ? 'active' : ''}`}
+                onClick={() => setRole('admin')}
+              >
+                🏛️ Admin
               </button>
             </div>
           )}
@@ -204,15 +253,15 @@ export default function AuthModule({ initialMode = 'login' }) {
               </div>
             )}
 
-            {mode === 'register' && role === 'faculty' && (
+            {mode === 'register' && (role === 'faculty' || role === 'admin') && (
               <div className="teacher-fields active">
                 <div className="form-group">
-                  <label htmlFor="empId">Faculty Employee ID</label>
+                  <label htmlFor="empId">{role === 'admin' ? 'Staff ID' : 'Faculty Employee ID'}</label>
                   <input
                     type="text"
                     id="empId"
                     required
-                    placeholder="e.g. RVU-FAC-104"
+                    placeholder={role === 'admin' ? 'e.g. RVU-ADM-01' : 'e.g. RVU-FAC-104'}
                     value={formData.empId}
                     onChange={handleChange}
                   />
@@ -225,6 +274,7 @@ export default function AuthModule({ initialMode = 'login' }) {
                     <option value="SoDI">School of Design and Innovation</option>
                     <option value="SoE">School of Economics</option>
                     <option value="SoLAS">School of Liberal Arts and Sciences</option>
+                    {role === 'admin' && <option value="Central IT Administration">Central IT Administration</option>}
                   </select>
                 </div>
               </div>
