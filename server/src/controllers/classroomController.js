@@ -180,7 +180,25 @@ const getDemoData = () => {
     }
   ];
 
-  return { courses, notices, assignments };
+  const customAssignments = (() => {
+    try {
+      const f = path.join(__dirname, '..', 'data', 'assignments.json');
+      return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : [];
+    } catch { return []; }
+  })();
+
+  const customNotices = (() => {
+    try {
+      const f = path.join(__dirname, '..', 'data', 'notices.json');
+      return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : [];
+    } catch { return []; }
+  })();
+
+  return {
+    courses,
+    notices: [...customNotices, ...notices],
+    assignments: [...customAssignments, ...assignments]
+  };
 };
 
 exports.getConnectUrl = (req, res) => {

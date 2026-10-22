@@ -29,6 +29,50 @@ const saveUsers = (users) => {
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_for_dev_only';
 
+// Seed default Admin and Faculty accounts if not already present
+const seedDefaultAccounts = async () => {
+  const users = readUsers();
+  let changed = false;
+
+  const adminExists = users.some((u) => u.email === 'admin@rvu.edu.in' || u.role === 'admin');
+  if (!adminExists) {
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash('admin123', salt);
+    users.push({
+      id: 'admin-seed-1',
+      name: 'Campus IT Administrator',
+      email: 'admin@rvu.edu.in',
+      password: hash,
+      role: 'admin',
+      department: 'Central IT Administration',
+      createdAt: new Date().toISOString()
+    });
+    changed = true;
+  }
+
+  const facultyExists = users.some((u) => u.email === 'faculty@rvu.edu.in' || u.role === 'faculty');
+  if (!facultyExists) {
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash('faculty123', salt);
+    users.push({
+      id: 'fac-seed-1',
+      name: 'Dr. Ramesh Kumar',
+      email: 'faculty@rvu.edu.in',
+      password: hash,
+      role: 'faculty',
+      empId: 'RVU-FAC-042',
+      department: 'SoCSE',
+      createdAt: new Date().toISOString()
+    });
+    changed = true;
+  }
+
+  if (changed) {
+    saveUsers(users);
+  }
+};
+seedDefaultAccounts();
+
 exports.register = async (req, res) => {
   try {
     const { name, email, password, role, usn, branch, year, empId, department } = req.body;
@@ -38,11 +82,10 @@ exports.register = async (req, res) => {
     }
 
     const normalizedEmail = email.toLowerCase();
-    
     const users = readUsers();
-    
+
     // Check duplicate
-    const existingUser = users.find(u => u.email === normalizedEmail);
+    const existingUser = users.find((u) => u.email === normalizedEmail);
     if (existingUser) {
       return res.status(400).json({ error: 'Email is already registered' });
     }
@@ -57,12 +100,12 @@ exports.register = async (req, res) => {
       name,
       email: normalizedEmail,
       password: hashedPassword,
-      role, // 'student' or 'faculty'
+      role: ['student', 'faculty', 'admin'].includes(role) ? role : 'student',
       usn: role === 'student' ? usn : null,
       branch: role === 'student' ? branch : null,
       year: role === 'student' ? year : null,
-      empId: role === 'faculty' ? empId : null,
-      department: role === 'faculty' ? department : null,
+      empId: (role === 'faculty' || role === 'admin') ? empId : null,
+      department: (role === 'faculty' || role === 'admin') ? department : null,
       createdAt: new Date().toISOString()
     };
 
@@ -71,7 +114,7 @@ exports.register = async (req, res) => {
 
     // Generate JWT
     const token = jwt.sign(
-      { userId: newUser.id, role: newUser.role },
+      { userId: newUser.id, role: newUser.role, name: newUser.name },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -96,7 +139,7 @@ exports.login = async (req, res) => {
 
     const normalizedEmail = email.toLowerCase();
     const users = readUsers();
-    const user = users.find(u => u.email === normalizedEmail);
+    const user = users.find((u) => u.email === normalizedEmail);
 
     if (!user) {
       return res.status(400).json({ error: 'Invalid email or password' });
@@ -108,7 +151,7 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
+      { userId: user.id, role: user.role, name: user.name },
       JWT_SECRET,
       { expiresIn: '7d' }
     );

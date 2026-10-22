@@ -1,6 +1,6 @@
 {
   "ignore": [
-    "data/users.json",
-    "data/tokens.json"
+    "data/*",
+    "src/data/*"
   ]
 }

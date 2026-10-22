@@ -11,5 +11,18 @@
     "empId": null,
     "department": null,
     "createdAt": "2026-10-22T04:21:58.934Z"
+  },
+  {
+    "id": "1792643246610",
+    "name": "Nishit Patel",
+    "email": "patelnishitkumarbsc24@rvu.edu.in",
+    "password": "$2b$10$Cmw0SC3Kx5j5rcf8u2WrOepUe8P8CYceBEtaJ4lZyW6aX.t6rM/se",
+    "role": "student",
+    "usn": "1RUA24SCS0068",
+    "branch": "SoCSE",
+    "year": "3",
+    "empId": null,
+    "department": null,
+    "createdAt": "2026-10-22T04:27:26.610Z"
   }
 ]
