@@ -61,7 +61,19 @@ export const authAPI = {
 export const classroomAPI = {
   connect: async () => {
     const response = await api.get('/classroom/connect-url');
-    window.location.href = response.data.url;
+    if (response.data && response.data.url) {
+      window.location.href = response.data.url;
+      return { redirected: true };
+    }
+    return response.data;
+  },
+  connectDemo: async () => {
+    const response = await api.post('/classroom/connect-demo');
+    return response.data;
+  },
+  disconnect: async () => {
+    const response = await api.post('/classroom/disconnect');
+    return response.data;
   },
   status: async () => {
     const response = await api.get('/classroom/status');
