@@ -85,4 +85,64 @@ export const classroomAPI = {
   }
 };
 
+// Faculty API endpoints (Mini Google Classroom)
+export const facultyAPI = {
+  getCourses: async () => {
+    const response = await api.get('/faculty/courses');
+    return response.data;
+  },
+  getAssignments: async () => {
+    const response = await api.get('/faculty/assignments');
+    return response.data;
+  },
+  createAssignment: async (data) => {
+    const response = await api.post('/faculty/assignments', data);
+    return response.data;
+  },
+  deleteAssignment: async (id) => {
+    const response = await api.delete(`/faculty/assignments/${id}`);
+    return response.data;
+  },
+  postAnnouncement: async (data) => {
+    const response = await api.post('/faculty/announcements', data);
+    return response.data;
+  },
+  getStudents: async () => {
+    const response = await api.get('/faculty/students');
+    return response.data;
+  },
+  saveAttendance: async (data) => {
+    const response = await api.post('/faculty/attendance', data);
+    return response.data;
+  },
+  getAttendanceHistory: async () => {
+    const response = await api.get('/faculty/attendance');
+    return response.data;
+  }
+};
+
+// Admin API endpoints (Campus System Controls)
+export const adminAPI = {
+  getMetrics: async () => {
+    const response = await api.get('/admin/metrics');
+    return response.data;
+  },
+  getUsers: async () => {
+    const response = await api.get('/admin/users');
+    return response.data;
+  },
+  deleteUser: async (id) => {
+    const response = await api.delete(`/admin/users/${id}`);
+    return response.data;
+  },
+  broadcastNotice: async (data) => {
+    const response = await api.post('/admin/broadcast', data);
+    return response.data;
+  },
+  getSystemAudit: async () => {
+    const response = await api.get('/admin/system');
+    return response.data;
+  }
+};
+
 export default api;
