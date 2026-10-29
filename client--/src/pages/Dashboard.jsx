@@ -3,12 +3,22 @@ import { useNavigate, Link, useLocation } from 'react-router';
 import { getSession, clearSession, classroomAPI } from '../api';
 import FacultyPortal from '../components/FacultyPortal';
 import AdminPortal from '../components/AdminPortal';
+import {
+  AnnouncementIcon,
+  AssignmentIcon,
+  CourseIcon,
+  AttendanceIcon,
+  ProfileIcon,
+  GoogleIcon,
+  RefreshIcon,
+  LogoutIcon,
+  CheckIcon
+} from '../components/Icons';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState(null);
-  const [currentRole, setCurrentRole] = useState('student'); // 'student', 'faculty', 'admin'
   const [activeTab, setActiveTab] = useState('notices');
   const [classroomConnected, setClassroomConnected] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -23,7 +33,6 @@ export default function Dashboard() {
       navigate('/login');
     } else {
       setUser(session.user);
-      setCurrentRole(session.user.role || 'student');
 
       // Load profile photo from local storage if exists
       const savedPhoto = localStorage.getItem(`profile_photo_${session.user.id}`);
@@ -122,12 +131,14 @@ export default function Dashboard() {
     }
   };
 
-  if (!user) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading...</div>;
+  if (!user) return <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>Loading portal...</div>;
+
+  const role = user.role || 'student';
 
   return (
     <div>
       {/* Top Navbar */}
-      <header className="navbar" style={{ borderBottom: '1px solid #eaeaea' }}>
+      <header className="navbar">
         <div className="logo-group">
           <div className="brand-badge">RV</div>
           <div>
@@ -137,158 +148,264 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="nav-actions" style={{ alignItems: 'center' }}>
-          {/* Quick Role Preview Pill */}
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginRight: '15px', backgroundColor: '#f1f3f4', padding: '4px 8px', borderRadius: '20px' }}>
-            <span style={{ fontSize: '0.75rem', color: '#555', fontWeight: 'bold', marginLeft: '4px' }}>Portal:</span>
-            {['student', 'faculty', 'admin'].map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setCurrentRole(r)}
-                style={{
-                  padding: '3px 10px',
-                  borderRadius: '15px',
-                  border: 'none',
-                  backgroundColor: currentRole === r ? 'var(--primary-green)' : 'transparent',
-                  color: currentRole === r ? 'white' : '#555',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  textTransform: 'capitalize'
-                }}
-              >
-                {r}
-              </button>
-            ))}
+        <div className="nav-actions" style={{ alignItems: 'center', gap: '16px' }}>
+          {/* Strictly verified authenticated user badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '0.9rem', color: '#334155', fontWeight: '600' }}>
+              {user.name}
+            </span>
+            <span style={{
+              backgroundColor: role === 'admin' ? '#fee2e2' : role === 'faculty' ? '#e0f2fe' : '#dcfce7',
+              color: role === 'admin' ? '#b91c1c' : role === 'faculty' ? '#0369a1' : '#15803d',
+              padding: '3px 10px',
+              borderRadius: '20px',
+              fontSize: '0.75rem',
+              fontWeight: '800',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              {role}
+            </span>
           </div>
 
-          <span style={{ marginRight: '15px', fontWeight: '500' }}>
-            Welcome, {user.name} ({currentRole})
-          </span>
           {profilePhoto && (
             <img 
               src={profilePhoto} 
               alt="Profile" 
-              style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary-green)' }} 
+              style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary-green)' }} 
             />
           )}
-          <button onClick={handleLogout} className="btn-secondary" style={{ marginLeft: '10px' }}>Logout</button>
+
+          <button onClick={handleLogout} className="btn-secondary" style={{ padding: '7px 16px', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <LogoutIcon size={15} />
+            <span>Logout</span>
+          </button>
         </div>
       </header>
 
       {/* Main Workspace Layout */}
-      <div style={{ display: 'flex', minHeight: 'calc(100vh - 80px)', backgroundColor: '#f9fafb' }}>
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 80px)', backgroundColor: '#f8fafc' }}>
         
-        {/* Student-specific sidebar */}
-        {currentRole === 'student' && (
-          <aside style={{ width: '260px', backgroundColor: 'white', padding: '30px 20px', borderRight: '1px solid #eaeaea', boxShadow: '2px 0 5px rgba(0,0,0,0.02)' }}>
+        {/* Strictly enforce role access: If student, show Student Navigation Sidebar */}
+        {role === 'student' && (
+          <aside style={{ width: '260px', backgroundColor: '#ffffff', padding: '28px 18px', borderRight: '1px solid #e2e8f0', boxShadow: '1px 0 3px rgba(0,0,0,0.02)' }}>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              <li style={{ marginBottom: '15px', color: 'var(--text-gray)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>
-                Student Dashboard
+              <li style={{ marginBottom: '16px', color: '#94a3b8', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '800', paddingLeft: '8px' }}>
+                Student Workspace
               </li>
 
-              <li style={{ marginBottom: '10px' }}>
+              <li style={{ marginBottom: '8px' }}>
                 <button 
                   onClick={() => setActiveTab('notices')} 
-                  style={{ width: '100%', textAlign: 'left', padding: '12px 15px', background: activeTab === 'notices' ? 'var(--primary-green)' : 'transparent', color: activeTab === 'notices' ? 'white' : 'var(--text-dark)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s' }}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '11px 14px',
+                    background: activeTab === 'notices' ? 'var(--primary-green)' : 'transparent',
+                    color: activeTab === 'notices' ? 'white' : '#334155',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '0.9rem',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}
                 >
-                  📢 Notices & Events
+                  <AnnouncementIcon size={18} color={activeTab === 'notices' ? '#ffffff' : '#64748b'} />
+                  <span>Notices & Events</span>
                 </button>
               </li>
 
-              <li style={{ marginBottom: '10px' }}>
+              <li style={{ marginBottom: '8px' }}>
                 <button 
                   onClick={() => setActiveTab('assignments')} 
-                  style={{ width: '100%', textAlign: 'left', padding: '12px 15px', background: activeTab === 'assignments' ? 'var(--primary-green)' : 'transparent', color: activeTab === 'assignments' ? 'white' : 'var(--text-dark)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s' }}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '11px 14px',
+                    background: activeTab === 'assignments' ? 'var(--primary-green)' : 'transparent',
+                    color: activeTab === 'assignments' ? 'white' : '#334155',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '0.9rem',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}
                 >
-                  📝 My Assignments
+                  <AssignmentIcon size={18} color={activeTab === 'assignments' ? '#ffffff' : '#64748b'} />
+                  <span>My Assignments</span>
                 </button>
               </li>
 
-              <li style={{ marginBottom: '10px' }}>
+              <li style={{ marginBottom: '8px' }}>
                 <button 
                   onClick={() => setActiveTab('courses')} 
-                  style={{ width: '100%', textAlign: 'left', padding: '12px 15px', background: activeTab === 'courses' ? 'var(--primary-green)' : 'transparent', color: activeTab === 'courses' ? 'white' : 'var(--text-dark)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '11px 14px',
+                    background: activeTab === 'courses' ? 'var(--primary-green)' : 'transparent',
+                    color: activeTab === 'courses' ? 'white' : '#334155',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '0.9rem',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
                 >
-                  <span>📚 Enrolled Courses</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <CourseIcon size={18} color={activeTab === 'courses' ? '#ffffff' : '#64748b'} />
+                    <span>Enrolled Courses</span>
+                  </div>
                   {classroomData?.courses?.length ? (
-                    <span style={{ backgroundColor: activeTab === 'courses' ? 'rgba(255,255,255,0.3)' : 'var(--primary-green)', color: 'white', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '10px' }}>
+                    <span style={{ backgroundColor: activeTab === 'courses' ? 'rgba(255,255,255,0.25)' : '#e2e8f0', color: activeTab === 'courses' ? 'white' : '#334155', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '10px', fontWeight: '700' }}>
                       {classroomData.courses.length}
                     </span>
                   ) : null}
                 </button>
               </li>
 
-              <li style={{ marginBottom: '10px' }}>
+              <li style={{ marginBottom: '8px' }}>
                 <button 
                   onClick={() => setActiveTab('attendance')} 
-                  style={{ width: '100%', textAlign: 'left', padding: '12px 15px', background: activeTab === 'attendance' ? 'var(--primary-green)' : 'transparent', color: activeTab === 'attendance' ? 'white' : 'var(--text-dark)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s' }}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '11px 14px',
+                    background: activeTab === 'attendance' ? 'var(--primary-green)' : 'transparent',
+                    color: activeTab === 'attendance' ? 'white' : '#334155',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '0.9rem',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}
                 >
-                  📊 Track Attendance
+                  <AttendanceIcon size={18} color={activeTab === 'attendance' ? '#ffffff' : '#64748b'} />
+                  <span>Track Attendance</span>
                 </button>
               </li>
 
-              <li style={{ marginBottom: '10px' }}>
+              <li style={{ marginBottom: '8px' }}>
                 <button 
                   onClick={() => setActiveTab('profile')} 
-                  style={{ width: '100%', textAlign: 'left', padding: '12px 15px', background: activeTab === 'profile' ? 'var(--primary-green)' : 'transparent', color: activeTab === 'profile' ? 'white' : 'var(--text-dark)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', transition: 'all 0.2s' }}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '11px 14px',
+                    background: activeTab === 'profile' ? 'var(--primary-green)' : 'transparent',
+                    color: activeTab === 'profile' ? 'white' : '#334155',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '0.9rem',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                  }}
                 >
-                  👤 My Profile
+                  <ProfileIcon size={18} color={activeTab === 'profile' ? '#ffffff' : '#64748b'} />
+                  <span>My Profile</span>
                 </button>
               </li>
             </ul>
           </aside>
         )}
 
-        {/* Dynamic Workspace Container */}
-        <main style={{ flex: 1, padding: '40px' }}>
+        {/* Dynamic Workspace Container strictly separated by Role */}
+        <main style={{ flex: 1, padding: '36px 40px' }}>
           
-          {/* FACULTY PORTAL (Mini Google Classroom) */}
-          {currentRole === 'faculty' && (
+          {/* FACULTY PORTAL: Rendered only when user.role === 'faculty' */}
+          {role === 'faculty' && (
             <FacultyPortal user={user} />
           )}
 
-          {/* ADMIN PORTAL (Institutional Control) */}
-          {currentRole === 'admin' && (
+          {/* ADMIN PORTAL: Rendered only when user.role === 'admin' */}
+          {role === 'admin' && (
             <AdminPortal user={user} />
           )}
 
-          {/* STUDENT PORTAL */}
-          {currentRole === 'student' && (
+          {/* STUDENT PORTAL: Rendered only when user.role === 'student' */}
+          {role === 'student' && (
             <>
-              {/* Google Classroom Banner */}
+              {/* Google Classroom Connection Banner with clean high-contrast styling */}
               {!classroomConnected ? (
-                <div style={{ backgroundColor: '#fff8e1', border: '1px solid #ffecb3', padding: '22px 26px', borderRadius: '10px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fde68a', padding: '24px 28px', borderRadius: '12px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', boxShadow: '0 2px 4px rgba(245, 158, 11, 0.05)' }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                      <h3 style={{ margin: 0, color: '#b78103' }}>Connect Google Classroom</h3>
-                      <span style={{ backgroundColor: '#ffe082', color: '#795548', fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                      <h3 style={{ margin: 0, color: '#92400e', fontSize: '1.25rem', fontWeight: '800' }}>Connect Google Classroom</h3>
+                      <span style={{ backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', fontSize: '0.75rem', fontWeight: '700', padding: '2px 10px', borderRadius: '12px' }}>
                         Simulation Ready
                       </span>
                     </div>
-                    <p style={{ margin: 0, color: '#666', fontSize: '0.95rem' }}>Sync your RV University enrolled courses, announcements, and assignments seamlessly.</p>
+                    <p style={{ margin: 0, color: '#78350f', fontSize: '0.95rem' }}>
+                      Sync your RV University enrolled courses, announcements, and assignments seamlessly.
+                    </p>
                   </div>
-                  <button onClick={handleConnectClassroom} disabled={isSyncing} className="btn-primary" style={{ backgroundColor: '#fbbc05', borderColor: '#fbbc05', color: '#333', fontWeight: '600' }}>
-                    {isSyncing ? 'Connecting...' : '⚡ Connect Google Classroom'}
+                  <button
+                    onClick={handleConnectClassroom}
+                    disabled={isSyncing}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      backgroundColor: '#0f172a',
+                      color: '#ffffff',
+                      border: 'none',
+                      padding: '11px 22px',
+                      borderRadius: '8px',
+                      fontWeight: '700',
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <GoogleIcon size={18} />
+                    <span>{isSyncing ? 'Connecting...' : 'Connect Google Classroom'}</span>
                   </button>
                 </div>
               ) : (
-                <div style={{ backgroundColor: '#e6f4ea', border: '1px solid #ceead6', padding: '20px 26px', borderRadius: '10px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', padding: '20px 26px', borderRadius: '12px', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', boxShadow: '0 2px 4px rgba(22, 163, 74, 0.05)' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                      <h3 style={{ margin: 0, color: '#137333' }}>Google Classroom Connected</h3>
-                      <span style={{ backgroundColor: '#c8e6c9', color: '#1b5e20', fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px' }}>
-                        {isDemoMode ? 'DEMO MODE (RVU SIMULATION)' : 'LIVE SYNC'}
+                      <h3 style={{ margin: 0, color: '#166534', fontSize: '1.2rem', fontWeight: '800' }}>Google Classroom Connected</h3>
+                      <span style={{ backgroundColor: '#dcfce7', color: '#15803d', fontSize: '0.75rem', fontWeight: '800', padding: '2px 8px', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
+                        {isDemoMode ? 'SIMULATION ACTIVE' : 'LIVE SYNC'}
                       </span>
                     </div>
-                    <p style={{ margin: 0, color: '#555', fontSize: '0.95rem' }}>Your active courses, assignments, and faculty notices are synced.</p>
+                    <p style={{ margin: 0, color: '#475569', fontSize: '0.95rem' }}>
+                      Enrolled courses, active assignments, and faculty notices are synced.
+                    </p>
                   </div>
                   <div style={{ display: 'flex', gap: '12px' }}>
-                    <button onClick={handleSyncClassroom} disabled={isSyncing} className="btn-primary" style={{ backgroundColor: '#137333', borderColor: '#137333' }}>
-                      {isSyncing ? '🔄 Syncing...' : '🔄 Sync Now'}
+                    <button
+                      onClick={handleSyncClassroom}
+                      disabled={isSyncing}
+                      className="btn-primary"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                    >
+                      <RefreshIcon size={16} />
+                      <span>{isSyncing ? 'Syncing...' : 'Sync Now'}</span>
                     </button>
-                    <button onClick={handleDisconnectClassroom} className="btn-secondary" style={{ color: '#c62828', borderColor: '#ffcdd2' }}>
+                    <button onClick={handleDisconnectClassroom} className="btn-secondary" style={{ color: '#b91c1c', borderColor: '#fecaca' }}>
                       Disconnect
                     </button>
                   </div>
@@ -299,37 +416,39 @@ export default function Dashboard() {
               {activeTab === 'notices' && (
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-                    <h2 style={{ margin: 0, color: 'var(--primary-green)' }}>Notices & Events</h2>
+                    <h2 style={{ margin: 0, color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>Notices & Events</h2>
                     {classroomConnected && (
-                      <span style={{ fontSize: '0.9rem', color: '#666' }}>Showing {classroomData?.notices?.length || 0} notices</span>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>
+                        Showing {classroomData?.notices?.length || 0} notices
+                      </span>
                     )}
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
                     {classroomData && classroomData.notices && classroomData.notices.length > 0 ? (
                       classroomData.notices.map((notice) => (
-                        <div key={notice.id} className="auth-card" style={{ maxWidth: '100%', padding: '25px', borderLeft: '5px solid var(--primary-green)' }}>
+                        <div key={notice.id} className="auth-card" style={{ maxWidth: '100%', padding: '24px 28px', borderLeft: '5px solid var(--primary-green)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
-                            <h3 style={{ margin: '0 0 8px', color: '#333' }}>{notice.title}</h3>
-                            <span style={{ color: '#888', fontSize: '0.85rem', backgroundColor: '#f1f3f4', padding: '3px 10px', borderRadius: '12px' }}>
-                              📅 {notice.date}
+                            <h3 style={{ margin: '0 0 8px', color: '#0f172a', fontSize: '1.2rem', fontWeight: '700' }}>{notice.title}</h3>
+                            <span style={{ color: '#64748b', fontSize: '0.8rem', backgroundColor: '#f1f5f9', padding: '3px 10px', borderRadius: '12px', fontWeight: '600' }}>
+                              {notice.date}
                             </span>
                           </div>
                           {notice.courseName && (
-                            <p style={{ color: 'var(--primary-green)', fontSize: '0.9rem', fontWeight: 'bold', margin: '4px 0 10px' }}>
+                            <p style={{ color: 'var(--primary-green)', fontSize: '0.85rem', fontWeight: '700', margin: '4px 0 10px' }}>
                               {notice.courseName}
                             </p>
                           )}
-                          <p style={{ margin: 0, color: '#555', lineHeight: '1.5' }}>
+                          <p style={{ margin: 0, color: '#475569', lineHeight: '1.6', fontSize: '0.95rem' }}>
                             {notice.description || 'Announcement posted to class stream.'}
                           </p>
                         </div>
                       ))
                     ) : (
-                      <div className="auth-card" style={{ maxWidth: '100%', padding: '25px', borderLeft: '4px solid #ccc' }}>
-                        <h3 style={{ marginTop: 0, color: '#333' }}>Welcome to Fall Semester 2026</h3>
-                        <p style={{ color: '#777', fontSize: '0.85rem' }}>Posted: Today</p>
-                        <p style={{ marginBottom: 0 }}>This is a default notice. Click "Connect Google Classroom" above to load actual course notices.</p>
+                      <div className="auth-card" style={{ maxWidth: '100%', padding: '30px', borderLeft: '4px solid #cbd5e1' }}>
+                        <h3 style={{ marginTop: 0, color: '#0f172a' }}>Welcome to Fall Semester 2026</h3>
+                        <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Posted: Today</p>
+                        <p style={{ marginBottom: 0, color: '#475569' }}>Click "Connect Google Classroom" above to load actual course notices.</p>
                       </div>
                     )}
                   </div>
@@ -340,34 +459,36 @@ export default function Dashboard() {
               {activeTab === 'assignments' && (
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-                    <h2 style={{ margin: 0, color: 'var(--primary-green)' }}>My Assignments</h2>
+                    <h2 style={{ margin: 0, color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>My Assignments</h2>
                     {classroomConnected && (
-                      <span style={{ fontSize: '0.9rem', color: '#666' }}>Showing {classroomData?.assignments?.length || 0} active assignments</span>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>
+                        Showing {classroomData?.assignments?.length || 0} active assignments
+                      </span>
                     )}
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '22px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
                     {classroomData && classroomData.assignments && classroomData.assignments.length > 0 ? (
                       classroomData.assignments.map((assn) => (
-                        <div key={assn.id} className="auth-card" style={{ maxWidth: '100%', padding: '25px', borderTop: '4px solid #e74c3c', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                        <div key={assn.id} className="auth-card" style={{ maxWidth: '100%', padding: '24px', borderTop: '4px solid #ef4444', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                           <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                              <span style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '3px 8px', borderRadius: '10px', backgroundColor: assn.status === 'Due Soon' ? '#ffebee' : '#e8f5e9', color: assn.status === 'Due Soon' ? '#c62828' : '#2e7d32' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                              <span style={{ fontSize: '0.75rem', fontWeight: '800', padding: '3px 8px', borderRadius: '10px', backgroundColor: assn.status === 'Due Soon' ? '#fee2e2' : '#f0fdf4', color: assn.status === 'Due Soon' ? '#b91c1c' : '#15803d' }}>
                                 {assn.status || 'Active'}
                               </span>
                               {assn.points && (
-                                <span style={{ fontSize: '0.8rem', color: '#777', fontWeight: '600' }}>
+                                <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '700' }}>
                                   {assn.points}
                                 </span>
                               )}
                             </div>
-                            <h3 style={{ margin: '0 0 10px', color: '#333', fontSize: '1.15rem' }}>{assn.title}</h3>
+                            <h3 style={{ margin: '0 0 10px', color: '#0f172a', fontSize: '1.15rem', fontWeight: '700' }}>{assn.title}</h3>
                             {assn.courseName && (
-                              <p style={{ color: 'var(--primary-green)', fontSize: '0.85rem', fontWeight: 'bold', margin: '0 0 12px' }}>
+                              <p style={{ color: 'var(--primary-green)', fontSize: '0.85rem', fontWeight: '700', margin: '0 0 12px' }}>
                                 {assn.courseName}
                               </p>
                             )}
-                            <p style={{ color: '#666', fontSize: '0.85rem', margin: '0 0 15px' }}>
+                            <p style={{ color: '#475569', fontSize: '0.85rem', margin: '0 0 16px' }}>
                               <strong>Due Date:</strong> {assn.due}
                             </p>
                           </div>
@@ -377,9 +498,9 @@ export default function Dashboard() {
                         </div>
                       ))
                     ) : (
-                      <div className="auth-card" style={{ maxWidth: '100%', padding: '25px', borderTop: '4px solid #ccc' }}>
-                        <h3 style={{ marginTop: 0, color: '#333' }}>Sample Project Phase 1</h3>
-                        <p style={{ color: '#777', fontSize: '0.85rem' }}>Due: Next Friday</p>
+                      <div className="auth-card" style={{ maxWidth: '100%', padding: '25px', borderTop: '4px solid #cbd5e1' }}>
+                        <h3 style={{ marginTop: 0, color: '#0f172a' }}>Sample Project Phase 1</h3>
+                        <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Due: Next Friday</p>
                         <button className="btn-secondary" style={{ width: '100%', marginTop: '10px' }}>View Details</button>
                       </div>
                     )}
@@ -391,17 +512,17 @@ export default function Dashboard() {
               {activeTab === 'courses' && (
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-                    <h2 style={{ margin: 0, color: 'var(--primary-green)' }}>Enrolled Courses (Google Classroom)</h2>
+                    <h2 style={{ margin: 0, color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>Enrolled Courses (Google Classroom)</h2>
                     {classroomConnected && (
-                      <span style={{ fontSize: '0.9rem', color: '#666' }}>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>
                         {classroomData?.courses?.length || 0} active courses enrolled
                       </span>
                     )}
                   </div>
 
                   {!classroomConnected ? (
-                    <div className="auth-card" style={{ maxWidth: '100%', padding: '30px', textAlign: 'center' }}>
-                      <p style={{ fontSize: '1.1rem', color: '#555', marginBottom: '20px' }}>
+                    <div className="auth-card" style={{ maxWidth: '100%', padding: '36px', textAlign: 'center' }}>
+                      <p style={{ fontSize: '1.05rem', color: '#475569', marginBottom: '20px' }}>
                         Connect Google Classroom to view your official enrolled courses and classrooms.
                       </p>
                       <button onClick={handleConnectClassroom} className="btn-primary">
@@ -409,23 +530,23 @@ export default function Dashboard() {
                       </button>
                     </div>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '22px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
                       {classroomData && classroomData.courses && classroomData.courses.length > 0 ? (
                         classroomData.courses.map((course) => (
-                          <div key={course.id} className="auth-card" style={{ maxWidth: '100%', padding: '25px', borderTop: '4px solid var(--primary-green)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                          <div key={course.id} className="auth-card" style={{ maxWidth: '100%', padding: '24px', borderTop: '4px solid var(--primary-green)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                             <div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#e8f5e9', color: 'var(--primary-green)' }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: '800', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#f0fdf4', color: 'var(--primary-green)' }}>
                                   Active
                                 </span>
                                 {course.enrollmentCode && (
-                                  <span style={{ fontSize: '0.75rem', color: '#888', fontFamily: 'monospace' }}>
+                                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace' }}>
                                     Code: {course.enrollmentCode}
                                   </span>
                                 )}
                               </div>
-                              <h3 style={{ margin: '0 0 10px', color: '#222', fontSize: '1.2rem' }}>{course.name}</h3>
-                              <div style={{ fontSize: '0.85rem', color: '#666', lineHeight: '1.6', marginBottom: '15px' }}>
+                              <h3 style={{ margin: '0 0 10px', color: '#0f172a', fontSize: '1.2rem', fontWeight: '700' }}>{course.name}</h3>
+                              <div style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.6', marginBottom: '15px' }}>
                                 <div><strong>Section:</strong> {course.section || 'General'}</div>
                                 <div><strong>Room / Lab:</strong> {course.room || 'Online'}</div>
                                 {course.faculty && <div><strong>Faculty:</strong> {course.faculty}</div>}
@@ -453,20 +574,20 @@ export default function Dashboard() {
               {/* Active Tab Content: Attendance */}
               {activeTab === 'attendance' && (
                 <div>
-                  <h2 style={{ marginBottom: '25px', color: 'var(--primary-green)' }}>Track Attendance</h2>
-                  <div className="auth-card" style={{ maxWidth: '100%', padding: '30px' }}>
+                  <h2 style={{ marginBottom: '25px', color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>Track Attendance</h2>
+                  <div className="auth-card" style={{ maxWidth: '100%', padding: '32px' }}>
                     <div>
-                      <h3>Overall Attendance: 88%</h3>
-                      <div style={{ width: '100%', height: '20px', backgroundColor: '#e0e0e0', borderRadius: '10px', overflow: 'hidden', margin: '15px 0 30px' }}>
-                        <div style={{ width: '88%', height: '100%', backgroundColor: 'var(--primary-green)' }}></div>
+                      <h3 style={{ fontSize: '1.25rem', color: '#0f172a' }}>Overall Attendance: 88%</h3>
+                      <div style={{ width: '100%', height: '14px', backgroundColor: '#e2e8f0', borderRadius: '10px', overflow: 'hidden', margin: '15px 0 30px' }}>
+                        <div style={{ width: '88%', height: '100%', backgroundColor: 'var(--primary-green)', borderRadius: '10px' }}></div>
                       </div>
-                      <h4>Course-wise Attendance</h4>
-                      <ul style={{ paddingLeft: '20px', lineHeight: '1.8' }}>
-                        <li>CS301 - Full Stack Web Development: <strong>92%</strong> (23/25 Classes)</li>
-                        <li>CS304 - Database Management Systems: <strong>85%</strong> (17/20 Classes)</li>
-                        <li>CS308 - Computer Networks & Security: <strong>88%</strong> (22/25 Classes)</li>
-                        <li>AI201 - Intro to Machine Learning: <strong>90%</strong> (18/20 Classes)</li>
-                        <li>MA202 - Discrete Mathematics: <strong>84%</strong> (21/25 Classes)</li>
+                      <h4 style={{ color: '#334155', marginBottom: '14px' }}>Course-wise Attendance Breakdown</h4>
+                      <ul style={{ paddingLeft: '20px', lineHeight: '2', color: '#475569', fontSize: '0.95rem' }}>
+                        <li>CS301 - Full Stack Web Development: <strong style={{ color: '#166534' }}>92%</strong> (23/25 Classes)</li>
+                        <li>CS304 - Database Management Systems: <strong style={{ color: '#166534' }}>85%</strong> (17/20 Classes)</li>
+                        <li>CS308 - Computer Networks & Security: <strong style={{ color: '#166534' }}>88%</strong> (22/25 Classes)</li>
+                        <li>AI201 - Intro to Machine Learning: <strong style={{ color: '#166534' }}>90%</strong> (18/20 Classes)</li>
+                        <li>MA202 - Discrete Mathematics: <strong style={{ color: '#166534' }}>84%</strong> (21/25 Classes)</li>
                       </ul>
                     </div>
                   </div>
@@ -476,15 +597,15 @@ export default function Dashboard() {
               {/* Active Tab Content: Profile */}
               {activeTab === 'profile' && (
                 <div>
-                  <h2 style={{ marginBottom: '25px', color: 'var(--primary-green)' }}>Student Profile</h2>
-                  <div className="auth-card" style={{ maxWidth: '800px', padding: '30px' }}>
+                  <h2 style={{ marginBottom: '25px', color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>Student Profile</h2>
+                  <div className="auth-card" style={{ maxWidth: '800px', padding: '32px' }}>
                     <div style={{ display: 'flex', gap: '30px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{ width: '130px', height: '130px', backgroundColor: '#f0f0f0', borderRadius: '50%', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', border: '3px solid var(--primary-green)' }}>
+                        <div style={{ width: '130px', height: '130px', backgroundColor: '#f1f5f9', borderRadius: '50%', overflow: 'hidden', display: 'flex', justifyContent: 'center', alignItems: 'center', border: '3px solid var(--primary-green)' }}>
                           {profilePhoto ? (
                             <img src={profilePhoto} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           ) : (
-                            <span style={{ color: '#aaa', fontSize: '3rem' }}>👤</span>
+                            <ProfileIcon size={56} color="#94a3b8" />
                           )}
                         </div>
                         <input 
@@ -504,27 +625,27 @@ export default function Dashboard() {
                       </div>
                       
                       <div style={{ flex: 1, minWidth: '260px' }}>
-                        <h3 style={{ marginTop: 0, fontSize: '1.8rem', color: '#333' }}>{user.name}</h3>
-                        <p style={{ color: 'var(--primary-green)', fontWeight: 'bold', textTransform: 'capitalize', marginBottom: '20px' }}>
-                          {user.role} Account
+                        <h3 style={{ marginTop: 0, fontSize: '1.8rem', color: '#0f172a', fontWeight: '800' }}>{user.name}</h3>
+                        <p style={{ color: 'var(--primary-green)', fontWeight: '700', textTransform: 'capitalize', marginBottom: '20px' }}>
+                          Verified Student Account
                         </p>
                         
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
                           <div>
-                            <p style={{ margin: '0 0 5px', color: '#777', fontSize: '0.85rem' }}>Email</p>
-                            <p style={{ margin: 0, fontWeight: '500' }}>{user.email}</p>
+                            <p style={{ margin: '0 0 5px', color: '#64748b', fontSize: '0.85rem' }}>University Email</p>
+                            <p style={{ margin: 0, fontWeight: '600', color: '#0f172a' }}>{user.email}</p>
                           </div>
                           <div>
-                            <p style={{ margin: '0 0 5px', color: '#777', fontSize: '0.85rem' }}>USN</p>
-                            <p style={{ margin: 0, fontWeight: '500' }}>{user.usn || '1RV21CS001'}</p>
+                            <p style={{ margin: '0 0 5px', color: '#64748b', fontSize: '0.85rem' }}>USN</p>
+                            <p style={{ margin: 0, fontWeight: '600', color: '#0f172a' }}>{user.usn || '1RV21CS001'}</p>
                           </div>
                           <div>
-                            <p style={{ margin: '0 0 5px', color: '#777', fontSize: '0.85rem' }}>School</p>
-                            <p style={{ margin: 0, fontWeight: '500' }}>{user.branch || 'SoCSE'}</p>
+                            <p style={{ margin: '0 0 5px', color: '#64748b', fontSize: '0.85rem' }}>School</p>
+                            <p style={{ margin: 0, fontWeight: '600', color: '#0f172a' }}>{user.branch || 'SoCSE'}</p>
                           </div>
                           <div>
-                            <p style={{ margin: '0 0 5px', color: '#777', fontSize: '0.85rem' }}>Year</p>
-                            <p style={{ margin: 0, fontWeight: '500' }}>{user.year ? `${user.year} Year` : '3rd Year'}</p>
+                            <p style={{ margin: '0 0 5px', color: '#64748b', fontSize: '0.85rem' }}>Year</p>
+                            <p style={{ margin: 0, fontWeight: '600', color: '#0f172a' }}>{user.year ? `${user.year} Year` : '3rd Year'}</p>
                           </div>
                         </div>
                       </div>

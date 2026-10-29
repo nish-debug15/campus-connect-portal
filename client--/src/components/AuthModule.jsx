@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate, Link, useLocation } from 'react-router';
 import { authAPI, saveSession, getSession } from '../api';
 
 export default function AuthModule({ initialMode = 'login' }) {
   const [mode, setMode] = useState(initialMode); // 'login' or 'register'
   const [role, setRole] = useState('student'); // 'student', 'faculty', 'admin'
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Form State
   const [formData, setFormData] = useState({
@@ -25,11 +26,18 @@ export default function AuthModule({ initialMode = 'login' }) {
   const [rememberMe, setRememberMe] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  // Sync mode whenever initialMode prop changes (e.g. user navigates between /login and /register)
+  // Sync mode whenever initialMode prop or location changes
   useEffect(() => {
     setMode(initialMode);
     setError(null);
-  }, [initialMode]);
+
+    // If query param specifies role, set it
+    const params = new URLSearchParams(location.search);
+    const queryRole = params.get('role');
+    if (queryRole && ['student', 'faculty', 'admin'].includes(queryRole)) {
+      setRole(queryRole);
+    }
+  }, [initialMode, location]);
 
   // If already logged in, redirect to dashboard
   useEffect(() => {
@@ -125,42 +133,42 @@ export default function AuthModule({ initialMode = 'login' }) {
 
       <div className="auth-container">
         <div className="auth-card">
-          <h2>{mode === 'login' ? 'Welcome Back' : 'Create an Account'}</h2>
+          <h2>{mode === 'login' ? 'Campus Portal Login' : 'Create an Account'}</h2>
 
           {/* Quick Demo Credentials Autofill Banner (Only on Login) */}
           {mode === 'login' && (
-            <div style={{ backgroundColor: '#f1f8e9', border: '1px solid #c8e6c9', borderRadius: '8px', padding: '12px', marginBottom: '20px' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#2e7d32', marginBottom: '8px', textAlign: 'center' }}>
-                ⚡ QUICK DEMO LOGINS (Click to Auto-fill):
+            <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px', marginBottom: '22px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', textAlign: 'center' }}>
+                Quick Demo Credentials (Click to fill)
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <button
                   type="button"
                   onClick={() => fillDemoAccount('student')}
-                  style={{ fontSize: '0.75rem', padding: '5px 10px', borderRadius: '15px', border: '1px solid #2e7d32', backgroundColor: 'white', color: '#2e7d32', cursor: 'pointer', fontWeight: 'bold' }}
+                  style={{ fontSize: '0.75rem', padding: '5px 12px', borderRadius: '20px', border: '1px solid #16a34a', backgroundColor: 'white', color: '#166534', cursor: 'pointer', fontWeight: '700' }}
                 >
-                  🎓 Student
+                  Student
                 </button>
                 <button
                   type="button"
                   onClick={() => fillDemoAccount('faculty')}
-                  style={{ fontSize: '0.75rem', padding: '5px 10px', borderRadius: '15px', border: '1px solid #1565c0', backgroundColor: 'white', color: '#1565c0', cursor: 'pointer', fontWeight: 'bold' }}
+                  style={{ fontSize: '0.75rem', padding: '5px 12px', borderRadius: '20px', border: '1px solid #2563eb', backgroundColor: 'white', color: '#1e40af', cursor: 'pointer', fontWeight: '700' }}
                 >
-                  👨‍🏫 Faculty
+                  Faculty
                 </button>
                 <button
                   type="button"
                   onClick={() => fillDemoAccount('admin')}
-                  style={{ fontSize: '0.75rem', padding: '5px 10px', borderRadius: '15px', border: '1px solid #b71c1c', backgroundColor: 'white', color: '#b71c1c', cursor: 'pointer', fontWeight: 'bold' }}
+                  style={{ fontSize: '0.75rem', padding: '5px 12px', borderRadius: '20px', border: '1px solid #dc2626', backgroundColor: 'white', color: '#991b1b', cursor: 'pointer', fontWeight: '700' }}
                 >
-                  🏛️ Admin
+                  Administrator
                 </button>
               </div>
             </div>
           )}
 
           {error && (
-            <div style={{ color: 'white', backgroundColor: '#e74c3c', padding: '12px', borderRadius: '6px', marginBottom: '18px', textAlign: 'center', fontSize: '0.95rem' }}>
+            <div style={{ color: '#991b1b', backgroundColor: '#fee2e2', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '18px', textAlign: 'center', fontSize: '0.9rem', fontWeight: '600' }}>
               {error}
             </div>
           )}
@@ -172,21 +180,21 @@ export default function AuthModule({ initialMode = 'login' }) {
                 className={`role-btn ${role === 'student' ? 'active' : ''}`}
                 onClick={() => setRole('student')}
               >
-                🎓 Student
+                Student
               </button>
               <button
                 type="button"
                 className={`role-btn ${role === 'faculty' ? 'active' : ''}`}
                 onClick={() => setRole('faculty')}
               >
-                👨‍🏫 Faculty
+                Faculty
               </button>
               <button
                 type="button"
                 className={`role-btn ${role === 'admin' ? 'active' : ''}`}
                 onClick={() => setRole('admin')}
               >
-                🏛️ Admin
+                Administrator
               </button>
             </div>
           )}
@@ -207,7 +215,7 @@ export default function AuthModule({ initialMode = 'login' }) {
             )}
 
             <div className="form-group">
-              <label htmlFor="email">University Email</label>
+              <label htmlFor="email">University Email Address</label>
               <input
                 type="email"
                 id="email"
@@ -307,8 +315,8 @@ export default function AuthModule({ initialMode = 'login' }) {
             )}
 
             {mode === 'login' && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', fontSize: '0.9rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', fontWeight: 'normal', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', fontSize: '0.85rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', fontWeight: '500', cursor: 'pointer', color: '#475569' }}>
                   <input
                     type="checkbox"
                     style={{ width: 'auto', marginRight: '8px' }}
@@ -317,28 +325,28 @@ export default function AuthModule({ initialMode = 'login' }) {
                   />
                   Remember me
                 </label>
-                <a href="#forgot" onClick={(e) => { e.preventDefault(); alert('Please contact campus IT admin at support@rvu.edu.in to reset your password.'); }} style={{ color: 'var(--btn-green)', textDecoration: 'none' }}>
+                <a href="#forgot" onClick={(e) => { e.preventDefault(); alert('Please contact campus IT admin at support@rvu.edu.in to reset your password.'); }} style={{ color: 'var(--btn-green)', textDecoration: 'none', fontWeight: '600' }}>
                   Forgot Password?
                 </a>
               </div>
             )}
 
             {mode === 'register' && (
-              <div style={{ marginBottom: '20px', fontSize: '0.9rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', fontWeight: 'normal', cursor: 'pointer' }}>
+              <div style={{ marginBottom: '20px', fontSize: '0.85rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', fontWeight: '500', cursor: 'pointer', color: '#475569' }}>
                   <input
                     type="checkbox"
                     style={{ width: 'auto', marginRight: '8px' }}
                     checked={termsAccepted}
                     onChange={(e) => setTermsAccepted(e.target.checked)}
                   />
-                  I accept the RV University IT policy & conditions
+                  I accept the RV University IT policy & academic regulations
                 </label>
               </div>
             )}
 
             <button type="submit" className="btn-submit" disabled={loading}>
-              {loading ? 'Processing...' : (mode === 'login' ? 'Login' : 'Create Account')}
+              {loading ? 'Authenticating...' : (mode === 'login' ? 'Sign In to Portal' : 'Create Account')}
             </button>
           </form>
 
@@ -347,7 +355,7 @@ export default function AuthModule({ initialMode = 'login' }) {
               <p>
                 Don't have an account?{' '}
                 <span
-                  style={{ color: 'var(--btn-green)', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}
+                  style={{ color: 'var(--btn-green)', cursor: 'pointer', textDecoration: 'underline', fontWeight: '700' }}
                   onClick={switchToRegister}
                 >
                   Register here
@@ -357,15 +365,15 @@ export default function AuthModule({ initialMode = 'login' }) {
               <p>
                 Already have an account?{' '}
                 <span
-                  style={{ color: 'var(--btn-green)', cursor: 'pointer', textDecoration: 'underline', fontWeight: 'bold' }}
+                  style={{ color: 'var(--btn-green)', cursor: 'pointer', textDecoration: 'underline', fontWeight: '700' }}
                   onClick={switchToLogin}
                 >
                   Login here
                 </span>
               </p>
             )}
-            <p style={{ marginTop: '15px' }}>
-              <Link to="/" style={{ color: 'var(--text-gray)', textDecoration: 'none' }}>
+            <p style={{ marginTop: '16px' }}>
+              <Link to="/" style={{ color: '#64748b', textDecoration: 'none', fontSize: '0.85rem' }}>
                 ← Back to Campus Home
               </Link>
             </p>

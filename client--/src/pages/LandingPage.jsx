@@ -1,5 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router';
+import {
+  ProfileIcon,
+  CourseIcon,
+  SettingsIcon,
+  CheckIcon
+} from '../components/Icons';
 
 export default function LandingPage() {
   return (
@@ -14,8 +20,8 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="nav-actions">
-          <Link to="/login" className="btn-secondary">Login</Link>
-          <Link to="/register" className="btn-primary">Register</Link>
+          <Link to="/login" className="btn-secondary">Sign In</Link>
+          <Link to="/register" className="btn-primary">Register Account</Link>
         </div>
       </header>
 
@@ -25,7 +31,7 @@ export default function LandingPage() {
           <span className="module-tag">CS3301 • FULL STACK DEVELOPMENT</span>
           <h1>CAMPUS CONNECT PORTAL</h1>
           <p className="subtitle">
-            Next-generation unified academic hub for RV University. Connecting students, faculty, and central administration with seamless Google Classroom integration, real-time attendance registers, and MongoDB persistence.
+            Enterprise academic management platform for RV University. Built with unified role segregation for students, teaching faculty, and central administration, backed by MongoDB persistence and Google Classroom synchronization.
           </p>
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
             <a href="#roles" className="btn-hero-primary">
@@ -42,27 +48,27 @@ export default function LandingPage() {
               backdropFilter: 'blur(8px)',
               transition: 'all 0.2s ease'
             }}>
-              Instant Demo Access
+              Portal Sign In
             </Link>
           </div>
 
           {/* Stat Badges */}
-          <div style={{ display: 'flex', gap: '24px', marginTop: '48px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '10px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: '800' }}>5 Schools</div>
-              <div style={{ fontSize: '0.75rem', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cross-Disciplinary</div>
+          <div style={{ display: 'flex', gap: '20px', marginTop: '48px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '10px 22px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: '800' }}>5 Schools</div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Cross-Disciplinary</div>
             </div>
-            <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '10px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: '800' }}>Mini GCR</div>
-              <div style={{ fontSize: '0.75rem', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Classwork & Stream</div>
+            <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '10px 22px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: '800' }}>Mini GCR</div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Classwork & Stream</div>
             </div>
-            <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '10px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: '800' }}>MongoDB</div>
-              <div style={{ fontSize: '0.75rem', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Active Persistence</div>
+            <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '10px 22px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: '800' }}>MongoDB</div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Native Persistence</div>
             </div>
-            <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '10px 20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }}>
-              <div style={{ fontSize: '1.4rem', fontWeight: '800' }}>100% Free</div>
-              <div style={{ fontSize: '0.75rem', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Simulation Ready</div>
+            <div style={{ backgroundColor: 'rgba(255,255,255,0.1)', padding: '10px 22px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)' }}>
+              <div style={{ fontSize: '1.35rem', fontWeight: '800' }}>Role Isolated</div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Secure Workspaces</div>
             </div>
           </div>
         </div>
@@ -71,10 +77,10 @@ export default function LandingPage() {
       {/* Portal Roles Overview */}
       <section id="roles" className="section-container" style={{ backgroundColor: '#f8fafc', padding: '80px 24px' }}>
         <h2 className="section-title">
-          Choose Your Digital Workspace
+          Select Your Designated Portal
         </h2>
         <p className="section-subtitle">
-          Tailored interfaces built specifically for the needs of students, teaching faculty, and institutional administrators.
+          Dedicated, authenticated portals tailored specifically for students, teaching faculty, and central administration.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '30px', maxWidth: '1100px', margin: '0 auto' }}>
@@ -82,75 +88,81 @@ export default function LandingPage() {
           {/* Student Portal Card */}
           <div className="auth-card" style={{ maxWidth: '100%', textAlign: 'left', borderTop: '5px solid #0e3823', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '36px 32px' }}>
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <span style={{ fontSize: '2.4rem' }}>🎓</span>
-                <span style={{ backgroundColor: '#e8f5e9', color: '#1b5e20', fontSize: '0.75rem', fontWeight: '800', padding: '4px 10px', borderRadius: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#e8f5e9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ProfileIcon size={24} color="#15803d" />
+                </div>
+                <span style={{ backgroundColor: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', fontSize: '0.75rem', fontWeight: '800', padding: '4px 10px', borderRadius: '20px' }}>
                   STUDENT PORTAL
                 </span>
               </div>
-              <h3 style={{ margin: '0 0 10px 0', fontSize: '1.35rem', color: '#0f172a' }}>Student Experience</h3>
+              <h3 style={{ margin: '0 0 10px 0', fontSize: '1.35rem', color: '#0f172a', fontWeight: '800' }}>Student Workspace</h3>
               <p style={{ color: '#475569', fontSize: '0.92rem', lineHeight: '1.6', marginBottom: '20px' }}>
-                Sync live Google Classroom courses, track upcoming assignment deadlines, review course-wise attendance percentages, and download verified campus notices.
+                Sync Google Classroom coursework, review upcoming assignment deadlines, track course-wise attendance percentages, and receive verified announcements.
               </p>
               <ul style={{ paddingLeft: '18px', color: '#64748b', fontSize: '0.85rem', lineHeight: '1.8', marginBottom: '24px' }}>
-                <li>⚡ Google Classroom Simulation & Sync</li>
-                <li>📝 Coursework Deadlines & Point Values</li>
-                <li>📊 Interactive Attendance Visual Gauge</li>
-                <li>📢 Real-Time Class Stream Notices</li>
+                <li>Google Classroom Sync & Coursework Cards</li>
+                <li>Coursework Deadlines & Point Values</li>
+                <li>Interactive Attendance Breakdown Gauge</li>
+                <li>Live Class Stream Notices & Circulars</li>
               </ul>
             </div>
-            <Link to="/login" className="btn-primary" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '12px', borderRadius: '8px', fontWeight: '700' }}>
-              Access Student Portal ➔
+            <Link to="/login?role=student" className="btn-primary" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '12px', borderRadius: '8px', fontWeight: '700' }}>
+              Student Sign In ➔
             </Link>
           </div>
 
           {/* Faculty Portal Card */}
-          <div className="auth-card" style={{ maxWidth: '100%', textAlign: 'left', borderTop: '5px solid #1565c0', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '36px 32px' }}>
+          <div className="auth-card" style={{ maxWidth: '100%', textAlign: 'left', borderTop: '5px solid #1d4ed8', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '36px 32px' }}>
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <span style={{ fontSize: '2.4rem' }}>👨‍🏫</span>
-                <span style={{ backgroundColor: '#e3f2fd', color: '#1565c0', fontSize: '0.75rem', fontWeight: '800', padding: '4px 10px', borderRadius: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CourseIcon size={24} color="#1d4ed8" />
+                </div>
+                <span style={{ backgroundColor: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', fontSize: '0.75rem', fontWeight: '800', padding: '4px 10px', borderRadius: '20px' }}>
                   MINI GOOGLE CLASSROOM
                 </span>
               </div>
-              <h3 style={{ margin: '0 0 10px 0', fontSize: '1.35rem', color: '#0f172a' }}>Faculty Suite</h3>
+              <h3 style={{ margin: '0 0 10px 0', fontSize: '1.35rem', color: '#0f172a', fontWeight: '800' }}>Faculty Console</h3>
               <p style={{ color: '#475569', fontSize: '0.92rem', lineHeight: '1.6', marginBottom: '20px' }}>
-                Complete mini Google Classroom instructor suite: publish new assignments with due dates and rubrics, broadcast class stream notices, and mark daily student attendance.
+                Mini Google Classroom instructor workspace: create and publish assignments, broadcast announcements to the class stream, and record daily attendance registers.
               </p>
               <ul style={{ paddingLeft: '18px', color: '#64748b', fontSize: '0.85rem', lineHeight: '1.8', marginBottom: '24px' }}>
-                <li>📋 "+ Create Assignment" Modal with Rubrics</li>
-                <li>📢 Class Stream Announcement Feeds</li>
-                <li>👥 One-Click Daily Attendance Register</li>
-                <li>💾 Direct MongoDB Persistence</li>
+                <li>Create & Publish Course Assignments</li>
+                <li>Class Stream Announcements & Syllabi</li>
+                <li>Daily Student Attendance Register</li>
+                <li>Persistent MongoDB Database Storage</li>
               </ul>
             </div>
-            <Link to="/login" className="btn-secondary" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '12px', borderRadius: '8px', fontWeight: '700', borderColor: '#1565c0', color: '#1565c0' }}>
-              Access Faculty Console ➔
+            <Link to="/login?role=faculty" className="btn-secondary" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '12px', borderRadius: '8px', fontWeight: '700', borderColor: '#1d4ed8', color: '#1d4ed8' }}>
+              Faculty Sign In ➔
             </Link>
           </div>
 
           {/* Admin Portal Card */}
-          <div className="auth-card" style={{ maxWidth: '100%', textAlign: 'left', borderTop: '5px solid #b71c1c', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '36px 32px' }}>
+          <div className="auth-card" style={{ maxWidth: '100%', textAlign: 'left', borderTop: '5px solid #991b1b', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '36px 32px' }}>
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-                <span style={{ fontSize: '2.4rem' }}>🏛️</span>
-                <span style={{ backgroundColor: '#ffebee', color: '#b71c1c', fontSize: '0.75rem', fontWeight: '800', padding: '4px 10px', borderRadius: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <SettingsIcon size={24} color="#991b1b" />
+                </div>
+                <span style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', fontSize: '0.75rem', fontWeight: '800', padding: '4px 10px', borderRadius: '20px' }}>
                   CENTRAL GOVERNANCE
                 </span>
               </div>
-              <h3 style={{ margin: '0 0 10px 0', fontSize: '1.35rem', color: '#0f172a' }}>Administration Console</h3>
+              <h3 style={{ margin: '0 0 10px 0', fontSize: '1.35rem', color: '#0f172a', fontWeight: '800' }}>Admin Governance</h3>
               <p style={{ color: '#475569', fontSize: '0.92rem', lineHeight: '1.6', marginBottom: '20px' }}>
-                Executive university metrics dashboard, complete student and faculty user management directory with search/filters, circular broadcaster, and server health monitor.
+                Executive university metrics dashboard, complete student and faculty directory with real-time search, circular broadcaster, and server monitoring.
               </p>
               <ul style={{ paddingLeft: '18px', color: '#64748b', fontSize: '0.85rem', lineHeight: '1.8', marginBottom: '24px' }}>
-                <li>📊 Institutional Enrollment KPIs</li>
-                <li>👥 Searchable User Directory & Auditing</li>
-                <li>📢 Broadcast Official University Circulars</li>
-                <li>⚙️ Live Server Health & MongoDB Monitor</li>
+                <li>University-Wide Enrollment & Coursework KPIs</li>
+                <li>Complete User Account Audit & Management</li>
+                <li>Broadcast Official University Circulars</li>
+                <li>Live Server Health & Database Uptime</li>
               </ul>
             </div>
-            <Link to="/login" className="btn-secondary" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '12px', borderRadius: '8px', fontWeight: '700', borderColor: '#b71c1c', color: '#b71c1c' }}>
-              Access Admin Governance ➔
+            <Link to="/login?role=admin" className="btn-secondary" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '12px', borderRadius: '8px', fontWeight: '700', borderColor: '#991b1b', color: '#991b1b' }}>
+              Admin Sign In ➔
             </Link>
           </div>
 
@@ -185,7 +197,7 @@ export default function LandingPage() {
               <img src="https://d2b6aloc836m7p.cloudfront.net/wp-content/uploads/2025/12/SOLAS.jpg" alt="School of Liberal Arts & Sciences" title="SOLAS" />
               <img src="https://d2b6aloc836m7p.cloudfront.net/wp-content/uploads/2025/12/SOEPP.jpg" alt="School of Economics & Public Policy" title="SOEPP" />
               <img src="https://d2b6aloc836m7p.cloudfront.net/wp-content/uploads/2025/12/SOL.jpg" alt="School of Law" title="SOL" />
-              {/* Set 2 (Duplicate for seamless continuous loop) */}
+              {/* Set 2 (Duplicate for continuous loop) */}
               <img src="https://d2b6aloc836m7p.cloudfront.net/wp-content/uploads/2025/12/SoCSE.jpg" alt="School of Computer Science & Engineering" title="SoCSE" />
               <img src="https://d2b6aloc836m7p.cloudfront.net/wp-content/uploads/2025/12/SDI.jpg" alt="School of Design & Innovation" title="SDI" />
               <img src="https://d2b6aloc836m7p.cloudfront.net/wp-content/uploads/2025/12/SOB.jpg" alt="School of Business" title="SOB" />

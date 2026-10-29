@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { facultyAPI } from '../api';
+import {
+  AnnouncementIcon,
+  AssignmentIcon,
+  UsersIcon,
+  CourseIcon,
+  PlusIcon,
+  TrashIcon,
+  CheckIcon,
+  CrossIcon
+} from './Icons';
 
 export default function FacultyPortal({ user }) {
   const [activeTab, setActiveTab] = useState('stream'); // 'stream', 'classwork', 'attendance', 'classes'
@@ -77,7 +87,7 @@ export default function FacultyPortal({ user }) {
       setAnnouncements([res.notice, ...announcements]);
       setAnnouncementTitle('');
       setAnnouncementText('');
-      showToast('Announcement posted to class stream!');
+      showToast('Announcement posted to class stream.');
     } catch (err) {
       alert('Failed to post announcement');
     }
@@ -98,7 +108,7 @@ export default function FacultyPortal({ user }) {
         due: '',
         points: '100'
       });
-      showToast('Assignment published to students!');
+      showToast('Assignment published to students.');
     } catch (err) {
       alert('Failed to create assignment');
     }
@@ -138,7 +148,7 @@ export default function FacultyPortal({ user }) {
       });
 
       setAttendanceHistory([res.record, ...attendanceHistory]);
-      showToast(`Attendance for ${selectedCourse} on ${attendanceDate} saved!`);
+      showToast(`Attendance for ${selectedCourse} saved.`);
     } catch (err) {
       alert('Failed to save attendance records');
     }
@@ -148,27 +158,27 @@ export default function FacultyPortal({ user }) {
     <div>
       {/* Toast notification */}
       {actionMessage && (
-        <div style={{ backgroundColor: '#1b5e20', color: 'white', padding: '12px 20px', borderRadius: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
-          <span>✓ {actionMessage}</span>
-          <button onClick={() => setActionMessage(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.1rem' }}>×</button>
+        <div style={{ backgroundColor: '#14532d', color: 'white', padding: '12px 20px', borderRadius: '8px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+          <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{actionMessage}</span>
+          <button onClick={() => setActionMessage(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', fontSize: '1.2rem', lineHeight: '1' }}>×</button>
         </div>
       )}
 
       {/* Classroom Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, #137333 0%, #1e8e3e 100%)',
+        background: 'linear-gradient(135deg, #0e3823 0%, #165636 100%)',
         color: 'white',
-        padding: '30px',
-        borderRadius: '12px',
-        marginBottom: '25px',
-        boxShadow: '0 4px 15px rgba(19, 115, 51, 0.2)'
+        padding: '32px 36px',
+        borderRadius: '14px',
+        marginBottom: '28px',
+        boxShadow: '0 4px 20px rgba(14, 56, 35, 0.2)'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '15px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <div style={{ display: 'inline-block', backgroundColor: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '8px' }}>
+            <div style={{ display: 'inline-block', backgroundColor: 'rgba(255,255,255,0.15)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.5px', marginBottom: '10px' }}>
               FACULTY CLASSROOM CONSOLE
             </div>
-            <h1 style={{ margin: '0 0 5px 0', fontSize: '1.8rem' }}>{selectedCourse}</h1>
+            <h1 style={{ margin: '0 0 6px 0', fontSize: '1.85rem', fontWeight: '800', letterSpacing: '-0.5px' }}>{selectedCourse}</h1>
             <p style={{ margin: 0, opacity: 0.9, fontSize: '0.95rem' }}>
               Instructor: <strong>{user?.name}</strong> • Department: <strong>{user?.department || 'SoCSE'}</strong>
             </p>
@@ -180,13 +190,14 @@ export default function FacultyPortal({ user }) {
               onChange={(e) => setSelectedCourse(e.target.value)}
               style={{
                 backgroundColor: 'white',
-                color: '#222',
+                color: '#0f172a',
                 border: 'none',
-                padding: '10px 14px',
-                borderRadius: '6px',
-                fontWeight: '600',
+                padding: '10px 16px',
+                borderRadius: '8px',
+                fontWeight: '700',
                 fontSize: '0.9rem',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
               }}
             >
               <option value="CS301 - Full Stack Web Development">CS301 - Full Stack Web Dev</option>
@@ -197,67 +208,86 @@ export default function FacultyPortal({ user }) {
         </div>
       </div>
 
-      {/* Google Classroom Sub-Navigation Tabs */}
-      <div style={{ display: 'flex', borderBottom: '2px solid #e0e0e0', marginBottom: '25px', gap: '25px' }}>
+      {/* Modern Sub-Navigation Tabs */}
+      <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', marginBottom: '28px', gap: '20px' }}>
         <button
           onClick={() => setActiveTab('stream')}
           style={{
             background: 'none',
             border: 'none',
-            borderBottom: activeTab === 'stream' ? '3px solid #137333' : '3px solid transparent',
-            color: activeTab === 'stream' ? '#137333' : '#666',
-            fontWeight: '600',
-            fontSize: '1rem',
-            padding: '10px 5px',
-            cursor: 'pointer'
+            borderBottom: activeTab === 'stream' ? '3px solid var(--primary-green)' : '3px solid transparent',
+            color: activeTab === 'stream' ? 'var(--primary-green)' : '#64748b',
+            fontWeight: '700',
+            fontSize: '0.95rem',
+            padding: '12px 6px',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
-          📢 Stream
+          <AnnouncementIcon size={17} color={activeTab === 'stream' ? 'var(--primary-green)' : '#64748b'} />
+          <span>Stream</span>
         </button>
+
         <button
           onClick={() => setActiveTab('classwork')}
           style={{
             background: 'none',
             border: 'none',
-            borderBottom: activeTab === 'classwork' ? '3px solid #137333' : '3px solid transparent',
-            color: activeTab === 'classwork' ? '#137333' : '#666',
-            fontWeight: '600',
-            fontSize: '1rem',
-            padding: '10px 5px',
-            cursor: 'pointer'
+            borderBottom: activeTab === 'classwork' ? '3px solid var(--primary-green)' : '3px solid transparent',
+            color: activeTab === 'classwork' ? 'var(--primary-green)' : '#64748b',
+            fontWeight: '700',
+            fontSize: '0.95rem',
+            padding: '12px 6px',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
-          📋 Classwork & Assignments ({assignments.length})
+          <AssignmentIcon size={17} color={activeTab === 'classwork' ? 'var(--primary-green)' : '#64748b'} />
+          <span>Classwork & Assignments ({assignments.length})</span>
         </button>
+
         <button
           onClick={() => setActiveTab('attendance')}
           style={{
             background: 'none',
             border: 'none',
-            borderBottom: activeTab === 'attendance' ? '3px solid #137333' : '3px solid transparent',
-            color: activeTab === 'attendance' ? '#137333' : '#666',
-            fontWeight: '600',
-            fontSize: '1rem',
-            padding: '10px 5px',
-            cursor: 'pointer'
+            borderBottom: activeTab === 'attendance' ? '3px solid var(--primary-green)' : '3px solid transparent',
+            color: activeTab === 'attendance' ? 'var(--primary-green)' : '#64748b',
+            fontWeight: '700',
+            fontSize: '0.95rem',
+            padding: '12px 6px',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
-          👥 People & Attendance
+          <UsersIcon size={17} color={activeTab === 'attendance' ? 'var(--primary-green)' : '#64748b'} />
+          <span>People & Attendance</span>
         </button>
+
         <button
           onClick={() => setActiveTab('classes')}
           style={{
             background: 'none',
             border: 'none',
-            borderBottom: activeTab === 'classes' ? '3px solid #137333' : '3px solid transparent',
-            color: activeTab === 'classes' ? '#137333' : '#666',
-            fontWeight: '600',
-            fontSize: '1rem',
-            padding: '10px 5px',
-            cursor: 'pointer'
+            borderBottom: activeTab === 'classes' ? '3px solid var(--primary-green)' : '3px solid transparent',
+            color: activeTab === 'classes' ? 'var(--primary-green)' : '#64748b',
+            fontWeight: '700',
+            fontSize: '0.95rem',
+            padding: '12px 6px',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px'
           }}
         >
-          📚 My Teaching Classes
+          <CourseIcon size={17} color={activeTab === 'classes' ? 'var(--primary-green)' : '#64748b'} />
+          <span>Teaching Courses</span>
         </button>
       </div>
 
@@ -265,13 +295,13 @@ export default function FacultyPortal({ user }) {
       {activeTab === 'stream' && (
         <div>
           {/* Post Announcement Card */}
-          <div className="auth-card" style={{ maxWidth: '100%', padding: '25px', marginBottom: '30px', borderLeft: '4px solid #137333' }}>
-            <h3 style={{ margin: '0 0 15px 0', color: '#222' }}>Announce something to your class</h3>
+          <div className="auth-card" style={{ maxWidth: '100%', padding: '26px 30px', marginBottom: '32px', borderLeft: '5px solid var(--primary-green)' }}>
+            <h3 style={{ margin: '0 0 16px 0', color: '#0f172a', fontSize: '1.2rem', fontWeight: '700' }}>Share an announcement with your class</h3>
             <form onSubmit={handlePostAnnouncement}>
               <div className="form-group">
                 <input
                   type="text"
-                  placeholder="Announcement title / subject..."
+                  placeholder="Subject or circular title..."
                   value={announcementTitle}
                   onChange={(e) => setAnnouncementTitle(e.target.value)}
                   required
@@ -280,39 +310,38 @@ export default function FacultyPortal({ user }) {
               <div className="form-group">
                 <textarea
                   rows="3"
-                  style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-                  placeholder="Share details, lecture links, or classroom updates..."
+                  placeholder="Share details, lecture slides, or schedule updates..."
                   value={announcementText}
                   onChange={(e) => setAnnouncementText(e.target.value)}
                 />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button type="submit" className="btn-primary" style={{ backgroundColor: '#137333', borderColor: '#137333' }}>
-                  Post Announcement
+                <button type="submit" className="btn-primary">
+                  Publish to Stream
                 </button>
               </div>
             </form>
           </div>
 
           {/* Announcements Feed */}
-          <h3 style={{ color: '#444', marginBottom: '15px' }}>Class Stream Activity</h3>
+          <h3 style={{ color: '#0f172a', marginBottom: '18px', fontSize: '1.25rem', fontWeight: '800' }}>Class Stream Activity</h3>
           <div style={{ display: 'grid', gap: '18px' }}>
             {announcements.length > 0 ? (
               announcements.map((ann) => (
-                <div key={ann.id} className="auth-card" style={{ maxWidth: '100%', padding: '20px 25px' }}>
+                <div key={ann.id} className="auth-card" style={{ maxWidth: '100%', padding: '22px 26px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <div style={{ fontWeight: 'bold', color: '#222', fontSize: '1.1rem' }}>{ann.title}</div>
-                    <span style={{ fontSize: '0.8rem', color: '#888' }}>{ann.date}</span>
+                    <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '1.15rem' }}>{ann.title}</div>
+                    <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '600' }}>{ann.date}</span>
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: '#137333', fontWeight: 'bold', marginBottom: '10px' }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--primary-green)', fontWeight: '700', marginBottom: '10px' }}>
                     {ann.courseName}
                   </div>
-                  <p style={{ margin: 0, color: '#555', lineHeight: '1.5' }}>{ann.description}</p>
+                  <p style={{ margin: 0, color: '#475569', lineHeight: '1.6', fontSize: '0.95rem' }}>{ann.description}</p>
                 </div>
               ))
             ) : (
-              <div className="auth-card" style={{ maxWidth: '100%', padding: '30px', textAlign: 'center', color: '#777' }}>
-                No announcements posted yet. Use the box above to post to {selectedCourse}.
+              <div className="auth-card" style={{ maxWidth: '100%', padding: '36px', textAlign: 'center', color: '#64748b' }}>
+                No stream updates posted yet. Use the announcement box above to publish to {selectedCourse}.
               </div>
             )}
           </div>
@@ -323,13 +352,14 @@ export default function FacultyPortal({ user }) {
       {activeTab === 'classwork' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-            <h2 style={{ margin: 0, color: 'var(--primary-green)' }}>Coursework & Assignments</h2>
+            <h2 style={{ margin: 0, color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>Coursework & Assignments</h2>
             <button
               onClick={() => setShowCreateModal(true)}
               className="btn-primary"
-              style={{ backgroundColor: '#137333', borderColor: '#137333', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
             >
-              <span>+</span> Create Assignment
+              <PlusIcon size={16} />
+              <span>Create Assignment</span>
             </button>
           </div>
 
@@ -341,17 +371,18 @@ export default function FacultyPortal({ user }) {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.5)',
+              backgroundColor: 'rgba(15, 23, 42, 0.6)',
+              backdropFilter: 'blur(4px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 1000,
               padding: '20px'
             }}>
-              <div className="auth-card" style={{ maxWidth: '550px', width: '100%', padding: '30px' }}>
+              <div className="auth-card" style={{ maxWidth: '560px', width: '100%', padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <h3 style={{ margin: 0, color: '#137333' }}>Create New Assignment</h3>
-                  <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer' }}>×</button>
+                  <h3 style={{ margin: 0, color: 'var(--primary-green)', fontSize: '1.35rem', fontWeight: '800' }}>Publish Assignment</h3>
+                  <button onClick={() => setShowCreateModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#64748b' }}>×</button>
                 </div>
 
                 <form onSubmit={handleCreateAssignment}>
@@ -360,7 +391,7 @@ export default function FacultyPortal({ user }) {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Lab 4: Full Stack CRUD Implementation"
+                      placeholder="e.g. Lab 4: Full Stack REST API & Database Integration"
                       value={newAssignment.title}
                       onChange={(e) => setNewAssignment({ ...newAssignment, title: e.target.value })}
                     />
@@ -389,7 +420,7 @@ export default function FacultyPortal({ user }) {
                       />
                     </div>
                     <div className="form-group">
-                      <label>Points</label>
+                      <label>Total Points</label>
                       <input
                         type="number"
                         placeholder="100"
@@ -403,18 +434,17 @@ export default function FacultyPortal({ user }) {
                     <label>Instructions & Rubric</label>
                     <textarea
                       rows="4"
-                      style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-                      placeholder="Explain deliverables, submission formats, and requirements..."
+                      placeholder="Specify deliverables, repository link requirements, and evaluation metrics..."
                       value={newAssignment.description}
                       onChange={(e) => setNewAssignment({ ...newAssignment, description: e.target.value })}
                     />
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
                     <button type="button" onClick={() => setShowCreateModal(false)} className="btn-secondary">
                       Cancel
                     </button>
-                    <button type="submit" className="btn-primary" style={{ backgroundColor: '#137333', borderColor: '#137333' }}>
+                    <button type="submit" className="btn-primary">
                       Publish Assignment
                     </button>
                   </div>
@@ -427,27 +457,27 @@ export default function FacultyPortal({ user }) {
           <div style={{ display: 'grid', gap: '20px' }}>
             {assignments.length > 0 ? (
               assignments.map((assn) => (
-                <div key={assn.id} className="auth-card" style={{ maxWidth: '100%', padding: '25px', borderLeft: '4px solid #137333' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
+                <div key={assn.id} className="auth-card" style={{ maxWidth: '100%', padding: '24px 28px', borderLeft: '5px solid var(--primary-green)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px' }}>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px', backgroundColor: '#e8f5e9', color: '#137333' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '800', padding: '2px 8px', borderRadius: '12px', backgroundColor: '#f0fdf4', color: '#166534' }}>
                           {assn.points || '100 pts'}
                         </span>
-                        <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                        <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '600' }}>
                           Due: {assn.due}
                         </span>
                       </div>
-                      <h3 style={{ margin: '0 0 5px', color: '#222' }}>{assn.title}</h3>
-                      <p style={{ color: '#137333', fontWeight: 'bold', fontSize: '0.85rem', margin: '0 0 10px' }}>
+                      <h3 style={{ margin: '0 0 6px', color: '#0f172a', fontSize: '1.2rem', fontWeight: '700' }}>{assn.title}</h3>
+                      <p style={{ color: 'var(--primary-green)', fontWeight: '700', fontSize: '0.85rem', margin: '0 0 10px' }}>
                         {assn.courseName}
                       </p>
-                      <p style={{ margin: 0, color: '#555', fontSize: '0.9rem' }}>{assn.description}</p>
+                      <p style={{ margin: 0, color: '#475569', fontSize: '0.9rem', lineHeight: '1.6' }}>{assn.description}</p>
                     </div>
 
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button
-                        onClick={() => alert(`Reviewing submissions for: ${assn.title}\n42 Students Enrolled • 36 Turned in • 6 Missing`)}
+                        onClick={() => alert(`Reviewing submissions for: ${assn.title}\n42 Students Enrolled • 36 Turned In • 6 Missing`)}
                         className="btn-secondary"
                         style={{ fontSize: '0.85rem' }}
                       >
@@ -456,9 +486,10 @@ export default function FacultyPortal({ user }) {
                       <button
                         onClick={() => handleDeleteAssignment(assn.id)}
                         className="btn-secondary"
-                        style={{ color: '#c62828', borderColor: '#ffcdd2', fontSize: '0.85rem' }}
+                        style={{ color: '#b91c1c', borderColor: '#fecaca', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                       >
-                        Delete
+                        <TrashIcon size={14} />
+                        <span>Delete</span>
                       </button>
                     </div>
                   </div>
@@ -466,8 +497,8 @@ export default function FacultyPortal({ user }) {
               ))
             ) : (
               <div className="auth-card" style={{ maxWidth: '100%', padding: '40px', textAlign: 'center' }}>
-                <p style={{ color: '#666', fontSize: '1rem', marginBottom: '15px' }}>No assignments created yet.</p>
-                <button onClick={() => setShowCreateModal(true)} className="btn-primary" style={{ backgroundColor: '#137333' }}>
+                <p style={{ color: '#64748b', fontSize: '1rem', marginBottom: '18px' }}>No coursework published yet.</p>
+                <button onClick={() => setShowCreateModal(true)} className="btn-primary">
                   Create First Assignment
                 </button>
               </div>
@@ -481,9 +512,9 @@ export default function FacultyPortal({ user }) {
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', flexWrap: 'wrap', gap: '15px' }}>
             <div>
-              <h2 style={{ margin: '0 0 5px', color: 'var(--primary-green)' }}>Daily Attendance Register</h2>
-              <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-                Mark student presence for {selectedCourse}
+              <h2 style={{ margin: '0 0 5px', color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>Daily Attendance Register</h2>
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
+                Record student attendance for {selectedCourse}
               </p>
             </div>
 
@@ -492,14 +523,15 @@ export default function FacultyPortal({ user }) {
                 type="date"
                 value={attendanceDate}
                 onChange={(e) => setAttendanceDate(e.target.value)}
-                style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #ccc' }}
+                style={{ padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #cbd5e1' }}
               />
               <button
                 onClick={handleSaveAttendance}
                 className="btn-primary"
-                style={{ backgroundColor: '#137333', borderColor: '#137333', fontWeight: 'bold' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                💾 Save Register
+                <CheckIcon size={16} />
+                <span>Save Register</span>
               </button>
             </div>
           </div>
@@ -508,24 +540,24 @@ export default function FacultyPortal({ user }) {
           <div className="auth-card" style={{ maxWidth: '100%', padding: '0', overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ backgroundColor: '#f1f8e9', borderBottom: '2px solid #ceead6' }}>
-                  <th style={{ padding: '14px 20px', color: '#137333' }}>Student Name</th>
-                  <th style={{ padding: '14px 20px', color: '#137333' }}>USN</th>
-                  <th style={{ padding: '14px 20px', color: '#137333' }}>School</th>
-                  <th style={{ padding: '14px 20px', color: '#137333', textAlign: 'center' }}>Status</th>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ padding: '14px 20px', color: '#475569' }}>Student Name</th>
+                  <th style={{ padding: '14px 20px', color: '#475569' }}>USN</th>
+                  <th style={{ padding: '14px 20px', color: '#475569' }}>School</th>
+                  <th style={{ padding: '14px 20px', color: '#475569', textAlign: 'center' }}>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {students.map((student) => {
                   const isPresent = attendanceRecords[student.id] !== 'Absent';
                   return (
-                    <tr key={student.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '14px 20px', fontWeight: '500' }}>
+                    <tr key={student.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '14px 20px', fontWeight: '600' }}>
                         {student.name}
-                        <div style={{ fontSize: '0.8rem', color: '#888' }}>{student.email}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 'normal' }}>{student.email}</div>
                       </td>
-                      <td style={{ padding: '14px 20px', fontFamily: 'monospace' }}>{student.usn}</td>
-                      <td style={{ padding: '14px 20px' }}>{student.branch}</td>
+                      <td style={{ padding: '14px 20px', fontFamily: 'monospace', color: '#334155' }}>{student.usn}</td>
+                      <td style={{ padding: '14px 20px', color: '#475569' }}>{student.branch}</td>
                       <td style={{ padding: '14px 20px', textAlign: 'center' }}>
                         <button
                           type="button"
@@ -534,14 +566,19 @@ export default function FacultyPortal({ user }) {
                             padding: '6px 18px',
                             borderRadius: '20px',
                             border: 'none',
-                            fontWeight: 'bold',
+                            fontWeight: '700',
+                            fontSize: '0.8rem',
                             cursor: 'pointer',
-                            backgroundColor: isPresent ? '#e8f5e9' : '#ffebee',
-                            color: isPresent ? '#2e7d32' : '#c62828',
-                            transition: 'all 0.2s'
+                            backgroundColor: isPresent ? '#dcfce7' : '#fee2e2',
+                            color: isPresent ? '#15803d' : '#b91c1c',
+                            transition: 'all 0.15s ease',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px'
                           }}
                         >
-                          {isPresent ? '✓ Present' : '✗ Absent'}
+                          {isPresent ? <CheckIcon size={14} color="#15803d" /> : <CrossIcon size={14} color="#b91c1c" />}
+                          <span>{isPresent ? 'Present' : 'Absent'}</span>
                         </button>
                       </td>
                     </tr>
@@ -551,16 +588,16 @@ export default function FacultyPortal({ user }) {
             </table>
           </div>
 
-          {/* Attendance History */}
+          {/* Past Attendance History */}
           {attendanceHistory.length > 0 && (
-            <div style={{ marginTop: '35px' }}>
-              <h3 style={{ color: '#333', marginBottom: '15px' }}>Past Recorded Registers</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '15px' }}>
+            <div style={{ marginTop: '36px' }}>
+              <h3 style={{ color: '#0f172a', marginBottom: '16px', fontSize: '1.2rem', fontWeight: '800' }}>Recorded Attendance History</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
                 {attendanceHistory.slice(0, 4).map((h) => (
-                  <div key={h.id} className="auth-card" style={{ maxWidth: '100%', padding: '18px', borderLeft: '4px solid #137333' }}>
-                    <div style={{ fontWeight: 'bold', color: '#222' }}>{h.courseName}</div>
-                    <div style={{ fontSize: '0.85rem', color: '#666', margin: '4px 0' }}>Date: {h.date}</div>
-                    <div style={{ fontSize: '0.85rem', color: '#137333' }}>
+                  <div key={h.id} className="auth-card" style={{ maxWidth: '100%', padding: '18px 22px', borderLeft: '4px solid var(--primary-green)' }}>
+                    <div style={{ fontWeight: '700', color: '#0f172a' }}>{h.courseName}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#64748b', margin: '4px 0' }}>Date: {h.date}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#166534', fontWeight: '700' }}>
                       {h.records ? `${h.records.filter((r) => r.status === 'Present').length} / ${h.records.length} Present` : 'Recorded'}
                     </div>
                   </div>
@@ -571,38 +608,38 @@ export default function FacultyPortal({ user }) {
         </div>
       )}
 
-      {/* 4. MY TEACHING CLASSES TAB */}
+      {/* 4. TEACHING COURSES TAB */}
       {activeTab === 'classes' && (
         <div>
-          <h2 style={{ marginBottom: '25px', color: 'var(--primary-green)' }}>My Active Courses & Laboratories</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '22px' }}>
+          <h2 style={{ marginBottom: '25px', color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>My Teaching Courses & Laboratories</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
             {courses.map((course) => (
-              <div key={course.id} className="auth-card" style={{ maxWidth: '100%', padding: '25px', borderTop: '4px solid #137333', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div key={course.id || course.code} className="auth-card" style={{ maxWidth: '100%', padding: '26px', borderTop: '4px solid var(--primary-green)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#e8f5e9', color: '#137333' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: '800', padding: '3px 8px', borderRadius: '10px', backgroundColor: '#f0fdf4', color: '#166534' }}>
                       {course.code}
                     </span>
-                    <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                      {course.enrolledStudents} Students
+                    <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '600' }}>
+                      {course.enrolledStudents} Students Enrolled
                     </span>
                   </div>
-                  <h3 style={{ margin: '0 0 10px', color: '#222' }}>{course.name}</h3>
-                  <div style={{ fontSize: '0.85rem', color: '#666', lineHeight: '1.6' }}>
+                  <h3 style={{ margin: '0 0 10px', color: '#0f172a', fontSize: '1.2rem', fontWeight: '700' }}>{course.name}</h3>
+                  <div style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.8' }}>
                     <div><strong>Section:</strong> {course.section}</div>
-                    <div><strong>Room:</strong> {course.room}</div>
+                    <div><strong>Room / Hall:</strong> {course.room}</div>
                     <div><strong>Schedule:</strong> {course.schedule}</div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '22px' }}>
                   <button
                     onClick={() => {
                       setSelectedCourse(course.name);
                       setActiveTab('classwork');
                     }}
                     className="btn-primary"
-                    style={{ flex: 1, backgroundColor: '#137333', borderColor: '#137333', fontSize: '0.85rem', padding: '8px' }}
+                    style={{ flex: 1, fontSize: '0.85rem', padding: '8px 12px' }}
                   >
                     Open Classwork
                   </button>
@@ -612,7 +649,7 @@ export default function FacultyPortal({ user }) {
                       setActiveTab('attendance');
                     }}
                     className="btn-secondary"
-                    style={{ flex: 1, fontSize: '0.85rem', padding: '8px' }}
+                    style={{ flex: 1, fontSize: '0.85rem', padding: '8px 12px' }}
                   >
                     Mark Attendance
                   </button>
