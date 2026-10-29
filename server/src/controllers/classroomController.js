@@ -1,6 +1,9 @@
 const { google } = require('googleapis');
 const fs = require('fs');
 const path = require('path');
+const Course = require('../models/Course');
+const Assignment = require('../models/Assignment');
+const Notice = require('../models/Notice');
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'mock_client_id';
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'mock_client_secret';
@@ -302,11 +305,50 @@ exports.sync = async (req, res) => {
       return res.status(401).json({ error: 'Google Classroom not connected' });
     }
 
-    // If user is in demo mode or credentials are not configured, return rich simulation data
+    // If user is in demo mode or credentials are not configured, return rich simulation data backed by MongoDB
     if (userTokens.isDemo || !isConfigured) {
-      const demoData = getDemoData();
+      let dbCourses = await Course.find().catch(() => []);
+      let dbNotices = await Notice.find().sort({ createdAt: -1 }).catch(() => []);
+      let dbAssignments = await Assignment.find().sort({ createdAt: -1 }).catch(() => []);
+
+      if (!dbCourses || dbCourses.length === 0) {
+        const fallback = getDemoData();
+        return res.json({
+          ...fallback,
+          isDemo: true
+        });
+      }
+
+      const courses = dbCourses.map((c) => ({
+        id: c._id.toString(),
+        name: c.name,
+        section: c.section,
+        room: c.room,
+        faculty: c.faculty,
+        enrollmentCode: c.enrollmentCode
+      }));
+
+      const notices = dbNotices.map((n) => ({
+        id: n._id.toString(),
+        title: n.title,
+        courseName: n.courseName,
+        date: n.date,
+        description: n.description
+      }));
+
+      const assignments = dbAssignments.map((a) => ({
+        id: a._id.toString(),
+        title: a.title,
+        courseName: a.courseName,
+        due: a.due,
+        points: a.points,
+        status: a.status
+      }));
+
       return res.json({
-        ...demoData,
+        courses,
+        notices,
+        assignments,
         isDemo: true
       });
     }

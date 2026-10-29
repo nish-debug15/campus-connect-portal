@@ -1,77 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
-const path = require('path');
-
-const usersFile = path.join(__dirname, '..', 'data', 'users.json');
-
-// Ensure data directory and file exist
-if (!fs.existsSync(path.dirname(usersFile))) {
-  fs.mkdirSync(path.dirname(usersFile), { recursive: true });
-}
-if (!fs.existsSync(usersFile)) {
-  fs.writeFileSync(usersFile, JSON.stringify([]));
-}
-
-const readUsers = () => {
-  try {
-    const data = fs.readFileSync(usersFile, 'utf8');
-    return JSON.parse(data);
-  } catch (err) {
-    console.error('Error reading users file:', err);
-    return [];
-  }
-};
-
-const saveUsers = (users) => {
-  fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
-};
+const User = require('../models/User');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_for_dev_only';
-
-// Seed default Admin and Faculty accounts if not already present
-const seedDefaultAccounts = async () => {
-  const users = readUsers();
-  let changed = false;
-
-  const adminExists = users.some((u) => u.email === 'admin@rvu.edu.in' || u.role === 'admin');
-  if (!adminExists) {
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash('admin123', salt);
-    users.push({
-      id: 'admin-seed-1',
-      name: 'Campus IT Administrator',
-      email: 'admin@rvu.edu.in',
-      password: hash,
-      role: 'admin',
-      department: 'Central IT Administration',
-      createdAt: new Date().toISOString()
-    });
-    changed = true;
-  }
-
-  const facultyExists = users.some((u) => u.email === 'faculty@rvu.edu.in' || u.role === 'faculty');
-  if (!facultyExists) {
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash('faculty123', salt);
-    users.push({
-      id: 'fac-seed-1',
-      name: 'Dr. Ramesh Kumar',
-      email: 'faculty@rvu.edu.in',
-      password: hash,
-      role: 'faculty',
-      empId: 'RVU-FAC-042',
-      department: 'SoCSE',
-      createdAt: new Date().toISOString()
-    });
-    changed = true;
-  }
-
-  if (changed) {
-    saveUsers(users);
-  }
-};
-seedDefaultAccounts();
 
 exports.register = async (req, res) => {
   try {
@@ -81,11 +12,10 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: 'Name, email, password, and role are required' });
     }
 
-    const normalizedEmail = email.toLowerCase();
-    const users = readUsers();
+    const normalizedEmail = email.toLowerCase().trim();
 
-    // Check duplicate
-    const existingUser = users.find((u) => u.email === normalizedEmail);
+    // Check duplicate in MongoDB
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ error: 'Email is already registered' });
     }
@@ -94,10 +24,9 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user object
-    const newUser = {
-      id: Date.now().toString(),
-      name,
+    // Create user in MongoDB
+    const newUser = await User.create({
+      name: name.trim(),
       email: normalizedEmail,
       password: hashedPassword,
       role: ['student', 'faculty', 'admin'].includes(role) ? role : 'student',
@@ -105,26 +34,33 @@ exports.register = async (req, res) => {
       branch: role === 'student' ? branch : null,
       year: role === 'student' ? year : null,
       empId: (role === 'faculty' || role === 'admin') ? empId : null,
-      department: (role === 'faculty' || role === 'admin') ? department : null,
-      createdAt: new Date().toISOString()
-    };
-
-    users.push(newUser);
-    saveUsers(users);
+      department: (role === 'faculty' || role === 'admin') ? department : null
+    });
 
     // Generate JWT
     const token = jwt.sign(
-      { userId: newUser.id, role: newUser.role, name: newUser.name },
+      { userId: newUser._id.toString(), role: newUser.role, name: newUser.name },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    // Exclude password from response
-    const { password: _, ...userData } = newUser;
+    const userData = {
+      id: newUser._id.toString(),
+      _id: newUser._id.toString(),
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      usn: newUser.usn,
+      branch: newUser.branch,
+      year: newUser.year,
+      empId: newUser.empId,
+      department: newUser.department,
+      createdAt: newUser.createdAt
+    };
 
     res.status(201).json({ token, user: userData });
   } catch (err) {
-    console.error(err);
+    console.error('Registration Error:', err);
     res.status(500).json({ error: 'Server error during registration' });
   }
 };
@@ -137,9 +73,8 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const normalizedEmail = email.toLowerCase();
-    const users = readUsers();
-    const user = users.find((u) => u.email === normalizedEmail);
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       return res.status(400).json({ error: 'Invalid email or password' });
@@ -151,16 +86,28 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user.id, role: user.role, name: user.name },
+      { userId: user._id.toString(), role: user.role, name: user.name },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    const { password: _, ...userData } = user;
+    const userData = {
+      id: user._id.toString(),
+      _id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      usn: user.usn,
+      branch: user.branch,
+      year: user.year,
+      empId: user.empId,
+      department: user.department,
+      createdAt: user.createdAt
+    };
 
     res.json({ token, user: userData });
   } catch (err) {
-    console.error(err);
+    console.error('Login Error:', err);
     res.status(500).json({ error: 'Server error during login' });
   }
 };
