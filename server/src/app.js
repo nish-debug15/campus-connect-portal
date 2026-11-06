@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 const connectDB = require('./config/db');
 const seedDB = require('./config/seed');
 
@@ -24,11 +26,24 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Routes
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/classroom', classroomRoutes);
 app.use('/api/faculty', facultyRoutes);
 app.use('/api/admin', adminRoutes);
+
+// Serve client build in production or when dist directory exists
+const clientDistPath = path.join(__dirname, '../../client--/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  // Express 5 compatible SPA fallback
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 // Connect DB and Start Server
 const startServer = async () => {
