@@ -253,6 +253,14 @@ export default function AdminPortal({ user }) {
               <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '4px' }}>Assignments in circulation</div>
             </div>
 
+            <div className="auth-card" style={{ maxWidth: '100%', padding: '24px', borderLeft: '5px solid #7c3aed' }}>
+              <div style={{ color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '0.5px' }}>Coursework Submissions</div>
+              <div style={{ fontSize: '2.2rem', fontWeight: '800', color: '#6d28d9', marginTop: '6px', letterSpacing: '-0.5px' }}>
+                {metrics?.totalSubmissions || 0}
+              </div>
+              <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '4px' }}>Turned in by students</div>
+            </div>
+
             <div className="auth-card" style={{ maxWidth: '100%', padding: '24px', borderLeft: '5px solid #991b1b' }}>
               <div style={{ color: '#64748b', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '0.5px' }}>Total System Users</div>
               <div style={{ fontSize: '2.2rem', fontWeight: '800', color: '#991b1b', marginTop: '6px', letterSpacing: '-0.5px' }}>

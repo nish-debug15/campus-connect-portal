@@ -12,7 +12,8 @@ import {
   GoogleIcon,
   RefreshIcon,
   LogoutIcon,
-  CheckIcon
+  CheckIcon,
+  CrossIcon
 } from '../components/Icons';
 
 export default function Dashboard() {
@@ -26,6 +27,17 @@ export default function Dashboard() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Student Attendance State
+  const [attendanceData, setAttendanceData] = useState(null);
+  const [loadingAttendance, setLoadingAttendance] = useState(false);
+
+  // Assignment Submission Modal State
+  const [selectedAssignment, setSelectedAssignment] = useState(null);
+  const [submissionText, setSubmissionText] = useState('');
+  const [submissionLink, setSubmissionLink] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionSuccess, setSubmissionSuccess] = useState(null);
 
   useEffect(() => {
     const session = getSession();
@@ -49,6 +61,10 @@ export default function Dashboard() {
       } else {
         checkClassroomStatus();
       }
+
+      // Pre-load data on mount
+      fetchClassroomData();
+      loadStudentAttendance();
     }
   }, [navigate, location]);
 
@@ -57,9 +73,6 @@ export default function Dashboard() {
       const res = await classroomAPI.status();
       setClassroomConnected(res.connected);
       setIsDemoMode(res.isDemo || false);
-      if (res.connected) {
-        fetchClassroomData();
-      }
     } catch (e) {
       console.error('Failed to get classroom status', e);
     }
@@ -77,6 +90,18 @@ export default function Dashboard() {
       console.error('Failed to sync classroom', e);
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const loadStudentAttendance = async () => {
+    setLoadingAttendance(true);
+    try {
+      const res = await classroomAPI.getAttendance();
+      setAttendanceData(res);
+    } catch (e) {
+      console.error('Failed to load attendance', e);
+    } finally {
+      setLoadingAttendance(false);
     }
   };
 
@@ -107,7 +132,6 @@ export default function Dashboard() {
       await classroomAPI.disconnect();
       setClassroomConnected(false);
       setIsDemoMode(false);
-      setClassroomData(null);
     } catch (e) {
       console.error('Failed to disconnect classroom', e);
     }
@@ -115,6 +139,45 @@ export default function Dashboard() {
 
   const handleSyncClassroom = async () => {
     await fetchClassroomData();
+    await loadStudentAttendance();
+  };
+
+  const handleOpenSubmissionModal = (assn) => {
+    setSelectedAssignment(assn);
+    setSubmissionSuccess(null);
+    if (assn.submission) {
+      setSubmissionText(assn.submission.submissionText || '');
+      setSubmissionLink(assn.submission.submissionLink || '');
+    } else {
+      setSubmissionText('');
+      setSubmissionLink('');
+    }
+  };
+
+  const handleSubmitCoursework = async (e) => {
+    e.preventDefault();
+    if (!selectedAssignment) return;
+
+    setIsSubmitting(true);
+    try {
+      const res = await classroomAPI.submitAssignment(selectedAssignment.id, {
+        submissionText,
+        submissionLink
+      });
+
+      setSubmissionSuccess('Assignment submitted successfully!');
+      // Update local state
+      await fetchClassroomData();
+      setTimeout(() => {
+        setSelectedAssignment(null);
+        setSubmissionSuccess(null);
+      }, 1500);
+    } catch (err) {
+      console.error('Submission failed', err);
+      alert('Failed to submit coursework. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handlePhotoUpload = (e) => {
@@ -236,11 +299,18 @@ export default function Dashboard() {
                     transition: 'all 0.15s ease',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '12px'
+                    justifyContent: 'space-between'
                   }}
                 >
-                  <AssignmentIcon size={18} color={activeTab === 'assignments' ? '#ffffff' : '#64748b'} />
-                  <span>My Assignments</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <AssignmentIcon size={18} color={activeTab === 'assignments' ? '#ffffff' : '#64748b'} />
+                    <span>My Assignments</span>
+                  </div>
+                  {classroomData?.assignments?.length ? (
+                    <span style={{ backgroundColor: activeTab === 'assignments' ? 'rgba(255,255,255,0.25)' : '#e2e8f0', color: activeTab === 'assignments' ? 'white' : '#334155', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '10px', fontWeight: '700' }}>
+                      {classroomData.assignments.length}
+                    </span>
+                  ) : null}
                 </button>
               </li>
 
@@ -392,7 +462,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                     <p style={{ margin: 0, color: '#475569', fontSize: '0.95rem' }}>
-                      Enrolled courses, active assignments, and faculty notices are synced.
+                      Enrolled courses, active assignments, and faculty notices are synchronized with MongoDB.
                     </p>
                   </div>
                   <div style={{ display: 'flex', gap: '12px' }}>
@@ -417,11 +487,9 @@ export default function Dashboard() {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
                     <h2 style={{ margin: 0, color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>Notices & Events</h2>
-                    {classroomConnected && (
-                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>
-                        Showing {classroomData?.notices?.length || 0} notices
-                      </span>
-                    )}
+                    <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>
+                      Showing {classroomData?.notices?.length || 0} notices
+                    </span>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
@@ -440,15 +508,15 @@ export default function Dashboard() {
                             </p>
                           )}
                           <p style={{ margin: 0, color: '#475569', lineHeight: '1.6', fontSize: '0.95rem' }}>
-                            {notice.description || 'Announcement posted to class stream.'}
+                            {notice.description || 'Official academic notice.'}
                           </p>
                         </div>
                       ))
                     ) : (
                       <div className="auth-card" style={{ maxWidth: '100%', padding: '30px', borderLeft: '4px solid #cbd5e1' }}>
-                        <h3 style={{ marginTop: 0, color: '#0f172a' }}>Welcome to Fall Semester 2026</h3>
+                        <h3 style={{ marginTop: 0, color: '#0f172a' }}>Welcome to RV University Fall Semester 2026</h3>
                         <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Posted: Today</p>
-                        <p style={{ marginBottom: 0, color: '#475569' }}>Click "Connect Google Classroom" above to load actual course notices.</p>
+                        <p style={{ marginBottom: 0, color: '#475569' }}>Academic circulars and lecture announcements will display here.</p>
                       </div>
                     )}
                   </div>
@@ -460,48 +528,82 @@ export default function Dashboard() {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
                     <h2 style={{ margin: 0, color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>My Assignments</h2>
-                    {classroomConnected && (
-                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>
-                        Showing {classroomData?.assignments?.length || 0} active assignments
-                      </span>
-                    )}
+                    <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>
+                      Showing {classroomData?.assignments?.length || 0} active assignments
+                    </span>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
                     {classroomData && classroomData.assignments && classroomData.assignments.length > 0 ? (
-                      classroomData.assignments.map((assn) => (
-                        <div key={assn.id} className="auth-card" style={{ maxWidth: '100%', padding: '24px', borderTop: '4px solid #ef4444', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                          <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                              <span style={{ fontSize: '0.75rem', fontWeight: '800', padding: '3px 8px', borderRadius: '10px', backgroundColor: assn.status === 'Due Soon' ? '#fee2e2' : '#f0fdf4', color: assn.status === 'Due Soon' ? '#b91c1c' : '#15803d' }}>
-                                {assn.status || 'Active'}
-                              </span>
-                              {assn.points && (
-                                <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '700' }}>
-                                  {assn.points}
+                      classroomData.assignments.map((assn) => {
+                        const isSubmitted = assn.submission && assn.submission.status === 'Submitted';
+                        const isGraded = assn.submission && assn.submission.status === 'Graded';
+
+                        return (
+                          <div key={assn.id} className="auth-card" style={{
+                            maxWidth: '100%',
+                            padding: '24px',
+                            borderTop: isGraded ? '4px solid #16a34a' : isSubmitted ? '4px solid #0284c7' : '4px solid #ef4444',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between'
+                          }}>
+                            <div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                <span style={{
+                                  fontSize: '0.75rem',
+                                  fontWeight: '800',
+                                  padding: '3px 10px',
+                                  borderRadius: '12px',
+                                  backgroundColor: isGraded ? '#dcfce7' : isSubmitted ? '#e0f2fe' : assn.status === 'Due Soon' ? '#fee2e2' : '#f1f5f9',
+                                  color: isGraded ? '#15803d' : isSubmitted ? '#0369a1' : assn.status === 'Due Soon' ? '#b91c1c' : '#475569'
+                                }}>
+                                  {isGraded ? 'Graded' : isSubmitted ? 'Submitted' : assn.status || 'Assigned'}
                                 </span>
+                                {assn.points && (
+                                  <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '700' }}>
+                                    {assn.points}
+                                  </span>
+                                )}
+                              </div>
+                              <h3 style={{ margin: '0 0 10px', color: '#0f172a', fontSize: '1.15rem', fontWeight: '700' }}>{assn.title}</h3>
+                              {assn.courseName && (
+                                <p style={{ color: 'var(--primary-green)', fontSize: '0.85rem', fontWeight: '700', margin: '0 0 12px' }}>
+                                  {assn.courseName}
+                                </p>
+                              )}
+                              <p style={{ color: '#475569', fontSize: '0.85rem', margin: '0 0 16px' }}>
+                                <strong>Due Date:</strong> {assn.due}
+                              </p>
+
+                              {isGraded && (
+                                <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', padding: '10px 12px', borderRadius: '8px', marginBottom: '14px' }}>
+                                  <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#166534' }}>
+                                    Evaluation: {assn.submission.grade}
+                                  </div>
+                                  {assn.submission.feedback && (
+                                    <div style={{ fontSize: '0.75rem', color: '#15803d', marginTop: '2px' }}>
+                                      Feedback: {assn.submission.feedback}
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
-                            <h3 style={{ margin: '0 0 10px', color: '#0f172a', fontSize: '1.15rem', fontWeight: '700' }}>{assn.title}</h3>
-                            {assn.courseName && (
-                              <p style={{ color: 'var(--primary-green)', fontSize: '0.85rem', fontWeight: '700', margin: '0 0 12px' }}>
-                                {assn.courseName}
-                              </p>
-                            )}
-                            <p style={{ color: '#475569', fontSize: '0.85rem', margin: '0 0 16px' }}>
-                              <strong>Due Date:</strong> {assn.due}
-                            </p>
+
+                            <button 
+                              onClick={() => handleOpenSubmissionModal(assn)}
+                              className={isSubmitted || isGraded ? "btn-secondary" : "btn-primary"}
+                              style={{ width: '100%', marginTop: '10px', padding: '10px 16px', fontWeight: '700' }}
+                            >
+                              {isGraded ? 'View Grade & Submission' : isSubmitted ? 'View / Edit Submission' : 'View Details & Submit'}
+                            </button>
                           </div>
-                          <button className="btn-secondary" style={{ width: '100%', marginTop: '10px' }}>
-                            View Details & Submit
-                          </button>
-                        </div>
-                      ))
+                        );
+                      })
                     ) : (
                       <div className="auth-card" style={{ maxWidth: '100%', padding: '25px', borderTop: '4px solid #cbd5e1' }}>
-                        <h3 style={{ marginTop: 0, color: '#0f172a' }}>Sample Project Phase 1</h3>
-                        <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Due: Next Friday</p>
-                        <button className="btn-secondary" style={{ width: '100%', marginTop: '10px' }}>View Details</button>
+                        <h3 style={{ marginTop: 0, color: '#0f172a' }}>No coursework assigned</h3>
+                        <p style={{ color: '#64748b', fontSize: '0.85rem' }}>All current project phases have been completed.</p>
                       </div>
                     )}
                   </div>
@@ -513,82 +615,116 @@ export default function Dashboard() {
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
                     <h2 style={{ margin: 0, color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>Enrolled Courses (Google Classroom)</h2>
-                    {classroomConnected && (
-                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>
-                        {classroomData?.courses?.length || 0} active courses enrolled
-                      </span>
-                    )}
+                    <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '600' }}>
+                      {classroomData?.courses?.length || 0} active courses enrolled
+                    </span>
                   </div>
 
-                  {!classroomConnected ? (
-                    <div className="auth-card" style={{ maxWidth: '100%', padding: '36px', textAlign: 'center' }}>
-                      <p style={{ fontSize: '1.05rem', color: '#475569', marginBottom: '20px' }}>
-                        Connect Google Classroom to view your official enrolled courses and classrooms.
-                      </p>
-                      <button onClick={handleConnectClassroom} className="btn-primary">
-                        Connect Google Classroom
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-                      {classroomData && classroomData.courses && classroomData.courses.length > 0 ? (
-                        classroomData.courses.map((course) => (
-                          <div key={course.id} className="auth-card" style={{ maxWidth: '100%', padding: '24px', borderTop: '4px solid var(--primary-green)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                            <div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <span style={{ fontSize: '0.75rem', fontWeight: '800', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#f0fdf4', color: 'var(--primary-green)' }}>
-                                  Active
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+                    {classroomData && classroomData.courses && classroomData.courses.length > 0 ? (
+                      classroomData.courses.map((course) => (
+                        <div key={course.id} className="auth-card" style={{ maxWidth: '100%', padding: '24px', borderTop: '4px solid var(--primary-green)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                              <span style={{ fontSize: '0.75rem', fontWeight: '800', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#f0fdf4', color: 'var(--primary-green)' }}>
+                                Active
+                              </span>
+                              {course.enrollmentCode && (
+                                <span style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace' }}>
+                                  Code: {course.enrollmentCode}
                                 </span>
-                                {course.enrollmentCode && (
-                                  <span style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace' }}>
-                                    Code: {course.enrollmentCode}
-                                  </span>
-                                )}
-                              </div>
-                              <h3 style={{ margin: '0 0 10px', color: '#0f172a', fontSize: '1.2rem', fontWeight: '700' }}>{course.name}</h3>
-                              <div style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.6', marginBottom: '15px' }}>
-                                <div><strong>Section:</strong> {course.section || 'General'}</div>
-                                <div><strong>Room / Lab:</strong> {course.room || 'Online'}</div>
-                                {course.faculty && <div><strong>Faculty:</strong> {course.faculty}</div>}
-                              </div>
+                              )}
                             </div>
-                            <button 
-                              onClick={() => setActiveTab('assignments')} 
-                              className="btn-secondary" 
-                              style={{ width: '100%', marginTop: '10px' }}
-                            >
-                              View Course Assignments
-                            </button>
+                            <h3 style={{ margin: '0 0 10px', color: '#0f172a', fontSize: '1.2rem', fontWeight: '700' }}>{course.name}</h3>
+                            <div style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.6', marginBottom: '15px' }}>
+                              <div><strong>Section:</strong> {course.section || 'General'}</div>
+                              <div><strong>Room / Lab:</strong> {course.room || 'Online'}</div>
+                              {course.faculty && <div><strong>Faculty:</strong> {course.faculty}</div>}
+                            </div>
                           </div>
-                        ))
-                      ) : (
-                        <div className="auth-card" style={{ maxWidth: '100%', padding: '25px' }}>
-                          <p>No courses synced yet. Click "Sync Now" in the banner above.</p>
+                          <button 
+                            onClick={() => setActiveTab('assignments')} 
+                            className="btn-secondary" 
+                            style={{ width: '100%', marginTop: '10px' }}
+                          >
+                            View Course Assignments
+                          </button>
                         </div>
-                      )}
-                    </div>
-                  )}
+                      ))
+                    ) : (
+                      <div className="auth-card" style={{ maxWidth: '100%', padding: '25px' }}>
+                        <p>No courses synced yet. Click "Sync Now" in the banner above.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
               {/* Active Tab Content: Attendance */}
               {activeTab === 'attendance' && (
                 <div>
-                  <h2 style={{ marginBottom: '25px', color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>Track Attendance</h2>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+                    <h2 style={{ margin: 0, color: 'var(--primary-green)', fontSize: '1.6rem', fontWeight: '800' }}>Track Attendance</h2>
+                    <button onClick={loadStudentAttendance} className="btn-secondary" style={{ padding: '6px 14px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <RefreshIcon size={14} />
+                      <span>{loadingAttendance ? 'Updating...' : 'Refresh Records'}</span>
+                    </button>
+                  </div>
+
                   <div className="auth-card" style={{ maxWidth: '100%', padding: '32px' }}>
                     <div>
-                      <h3 style={{ fontSize: '1.25rem', color: '#0f172a' }}>Overall Attendance: 88%</h3>
-                      <div style={{ width: '100%', height: '14px', backgroundColor: '#e2e8f0', borderRadius: '10px', overflow: 'hidden', margin: '15px 0 30px' }}>
-                        <div style={{ width: '88%', height: '100%', backgroundColor: 'var(--primary-green)', borderRadius: '10px' }}></div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: '10px' }}>
+                        <h3 style={{ fontSize: '1.4rem', color: '#0f172a', margin: 0, fontWeight: '800' }}>
+                          Overall Attendance: {attendanceData?.overallPercentage || 88}%
+                        </h3>
+                        <span style={{
+                          backgroundColor: (attendanceData?.overallPercentage || 88) >= 75 ? '#dcfce7' : '#fee2e2',
+                          color: (attendanceData?.overallPercentage || 88) >= 75 ? '#15803d' : '#b91c1c',
+                          padding: '4px 12px',
+                          borderRadius: '20px',
+                          fontSize: '0.8rem',
+                          fontWeight: '800'
+                        }}>
+                          {(attendanceData?.overallPercentage || 88) >= 75 ? 'Eligibility Criteria Met (>= 75%)' : 'Attendance Shortage Risk (< 75%)'}
+                        </span>
                       </div>
-                      <h4 style={{ color: '#334155', marginBottom: '14px' }}>Course-wise Attendance Breakdown</h4>
-                      <ul style={{ paddingLeft: '20px', lineHeight: '2', color: '#475569', fontSize: '0.95rem' }}>
-                        <li>CS301 - Full Stack Web Development: <strong style={{ color: '#166534' }}>92%</strong> (23/25 Classes)</li>
-                        <li>CS304 - Database Management Systems: <strong style={{ color: '#166534' }}>85%</strong> (17/20 Classes)</li>
-                        <li>CS308 - Computer Networks & Security: <strong style={{ color: '#166534' }}>88%</strong> (22/25 Classes)</li>
-                        <li>AI201 - Intro to Machine Learning: <strong style={{ color: '#166534' }}>90%</strong> (18/20 Classes)</li>
-                        <li>MA202 - Discrete Mathematics: <strong style={{ color: '#166534' }}>84%</strong> (21/25 Classes)</li>
-                      </ul>
+
+                      <div style={{ width: '100%', height: '14px', backgroundColor: '#e2e8f0', borderRadius: '10px', overflow: 'hidden', margin: '20px 0 30px' }}>
+                        <div style={{
+                          width: `${attendanceData?.overallPercentage || 88}%`,
+                          height: '100%',
+                          backgroundColor: (attendanceData?.overallPercentage || 88) >= 75 ? 'var(--primary-green)' : '#ef4444',
+                          borderRadius: '10px',
+                          transition: 'width 0.4s ease'
+                        }}></div>
+                      </div>
+
+                      <h4 style={{ color: '#334155', marginBottom: '18px', fontSize: '1.05rem', fontWeight: '700' }}>Course-wise Attendance Breakdown</h4>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                        {(attendanceData?.courses || []).map((c, idx) => (
+                          <div key={idx} style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px 20px' }}>
+                            <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '0.95rem', marginBottom: '8px' }}>
+                              {c.courseName}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                                {c.attended} / {c.total} Sessions
+                              </span>
+                              <span style={{
+                                fontWeight: '800',
+                                fontSize: '1rem',
+                                color: c.percentage >= 75 ? '#166534' : '#b91c1c'
+                              }}>
+                                {c.percentage}%
+                              </span>
+                            </div>
+                            <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '6px', overflow: 'hidden', marginTop: '10px' }}>
+                              <div style={{ width: `${c.percentage}%`, height: '100%', backgroundColor: c.percentage >= 75 ? '#16a34a' : '#ef4444', borderRadius: '6px' }}></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -658,6 +794,158 @@ export default function Dashboard() {
 
         </main>
       </div>
+
+      {/* Assignment Details & Coursework Submission Modal */}
+      {selectedAssignment && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            maxWidth: '620px',
+            width: '100%',
+            padding: '32px',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--primary-green)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {selectedAssignment.courseName}
+                </span>
+                <h2 style={{ margin: '4px 0 0', color: '#0f172a', fontSize: '1.4rem', fontWeight: '800' }}>
+                  {selectedAssignment.title}
+                </h2>
+              </div>
+              <button 
+                onClick={() => setSelectedAssignment(null)} 
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
+              >
+                <CrossIcon size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <div style={{ backgroundColor: '#f1f5f9', padding: '6px 14px', borderRadius: '8px', fontSize: '0.85rem', color: '#334155' }}>
+                <strong>Due:</strong> {selectedAssignment.due}
+              </div>
+              <div style={{ backgroundColor: '#f1f5f9', padding: '6px 14px', borderRadius: '8px', fontSize: '0.85rem', color: '#334155' }}>
+                <strong>Points:</strong> {selectedAssignment.points || '100 pts'}
+              </div>
+              <div style={{
+                backgroundColor: selectedAssignment.submission?.status === 'Graded' ? '#dcfce7' : selectedAssignment.submission ? '#e0f2fe' : '#fee2e2',
+                color: selectedAssignment.submission?.status === 'Graded' ? '#15803d' : selectedAssignment.submission ? '#0369a1' : '#b91c1c',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '0.85rem',
+                fontWeight: '700'
+              }}>
+                {selectedAssignment.submission?.status === 'Graded' ? 'Graded' : selectedAssignment.submission ? 'Submitted' : 'Pending Submission'}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ margin: '0 0 8px', color: '#334155', fontSize: '0.95rem' }}>Coursework Brief & Instructions</h4>
+              <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', lineHeight: '1.6', backgroundColor: '#f8fafc', padding: '14px 18px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                {selectedAssignment.description || 'Complete the deliverables specified by your faculty and submit the project link below.'}
+              </p>
+            </div>
+
+            {selectedAssignment.submission?.status === 'Graded' && (
+              <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '16px 20px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <h4 style={{ margin: 0, color: '#166534', fontSize: '1rem', fontWeight: '800' }}>Faculty Evaluation & Grade</h4>
+                  <span style={{ fontSize: '1.1rem', fontWeight: '800', color: '#166534' }}>
+                    {selectedAssignment.submission.grade}
+                  </span>
+                </div>
+                <p style={{ margin: 0, color: '#15803d', fontSize: '0.9rem' }}>
+                  <strong>Feedback:</strong> {selectedAssignment.submission.feedback || 'Great work! Well implemented.'}
+                </p>
+              </div>
+            )}
+
+            {submissionSuccess && (
+              <div style={{ backgroundColor: '#dcfce7', color: '#166534', padding: '12px 18px', borderRadius: '8px', marginBottom: '20px', fontSize: '0.9rem', fontWeight: '700' }}>
+                {submissionSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitCoursework}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                  Project Repository / Document URL
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://github.com/your-username/coursework-repo"
+                  value={submissionLink}
+                  onChange={(e) => setSubmissionLink(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '11px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                  Solution Notes & Implementation Summary
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Provide an overview of your architecture, endpoints implemented, or relevant testing notes..."
+                  value={submissionText}
+                  onChange={(e) => setSubmissionText(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '11px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.9rem',
+                    fontFamily: 'inherit'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedAssignment(null)}
+                  className="btn-secondary"
+                >
+                  Close
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="btn-primary"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                >
+                  <CheckIcon size={16} />
+                  <span>{isSubmitting ? 'Submitting...' : selectedAssignment.submission ? 'Update Submission' : 'Turn In Coursework'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

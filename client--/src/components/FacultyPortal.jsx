@@ -37,6 +37,13 @@ export default function FacultyPortal({ user }) {
   const [actionMessage, setActionMessage] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Submissions Review & Grading State
+  const [viewingAssignment, setViewingAssignment] = useState(null);
+  const [submissionsList, setSubmissionsList] = useState([]);
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
+  const [gradesInput, setGradesInput] = useState({});
+  const [gradingSubId, setGradingSubId] = useState(null);
+
   useEffect(() => {
     loadFacultyData();
   }, []);
@@ -115,13 +122,56 @@ export default function FacultyPortal({ user }) {
   };
 
   const handleDeleteAssignment = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this assignment?')) return;
+    if (!window.confirm('Are you sure you want to delete this assignment and all submissions?')) return;
     try {
       await facultyAPI.deleteAssignment(id);
       setAssignments(assignments.filter((a) => a.id !== id));
       showToast('Assignment removed.');
     } catch (err) {
       alert('Failed to delete assignment');
+    }
+  };
+
+  const handleOpenSubmissions = async (assn) => {
+    setViewingAssignment(assn);
+    setLoadingSubmissions(true);
+    try {
+      const res = await facultyAPI.getAssignmentSubmissions(assn.id);
+      const subs = res.submissions || [];
+      setSubmissionsList(subs);
+
+      // Prepopulate grades input
+      const initialGrades = {};
+      subs.forEach((s) => {
+        initialGrades[s.id] = {
+          grade: s.grade || '95/100',
+          feedback: s.feedback || 'Well completed coursework.'
+        };
+      });
+      setGradesInput(initialGrades);
+    } catch (err) {
+      console.error('Failed to load submissions:', err);
+      alert('Failed to load student submissions');
+    } finally {
+      setLoadingSubmissions(false);
+    }
+  };
+
+  const handleSaveGrade = async (subId) => {
+    setGradingSubId(subId);
+    try {
+      const input = gradesInput[subId] || { grade: '100/100', feedback: 'Approved' };
+      const res = await facultyAPI.gradeSubmission(subId, input);
+
+      setSubmissionsList((prev) =>
+        prev.map((s) => (s.id === subId ? { ...s, grade: input.grade, feedback: input.feedback, status: 'Graded' } : s))
+      );
+      showToast('Student coursework graded successfully.');
+    } catch (err) {
+      console.error('Failed to grade submission:', err);
+      alert('Failed to save grade');
+    } finally {
+      setGradingSubId(null);
     }
   };
 
@@ -453,6 +503,141 @@ export default function FacultyPortal({ user }) {
             </div>
           )}
 
+          {/* Submissions Review Modal */}
+          {viewingAssignment && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(15, 23, 42, 0.65)',
+              backdropFilter: 'blur(4px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              padding: '20px'
+            }}>
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                maxWidth: '750px',
+                width: '100%',
+                padding: '32px',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.25)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--primary-green)', textTransform: 'uppercase' }}>
+                      {viewingAssignment.courseName}
+                    </span>
+                    <h2 style={{ margin: '4px 0 0', color: '#0f172a', fontSize: '1.4rem', fontWeight: '800' }}>
+                      Submissions: {viewingAssignment.title}
+                    </h2>
+                  </div>
+                  <button onClick={() => setViewingAssignment(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                    <CrossIcon size={20} />
+                  </button>
+                </div>
+
+                {loadingSubmissions ? (
+                  <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Loading student submissions...</div>
+                ) : submissionsList.length === 0 ? (
+                  <div style={{ backgroundColor: '#f8fafc', padding: '36px', borderRadius: '12px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.95rem' }}>
+                      No student has submitted coursework for this assignment yet. Submissions turned in by students will show up here for grading.
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gap: '20px' }}>
+                    {submissionsList.map((sub) => (
+                      <div key={sub.id} style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', backgroundColor: '#f8fafc' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+                          <div>
+                            <div style={{ fontWeight: '700', fontSize: '1.05rem', color: '#0f172a' }}>{sub.studentName}</div>
+                            <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                              USN: {sub.studentUsn || 'N/A'} • {sub.studentEmail}
+                            </div>
+                          </div>
+                          <span style={{
+                            backgroundColor: sub.status === 'Graded' ? '#dcfce7' : '#e0f2fe',
+                            color: sub.status === 'Graded' ? '#15803d' : '#0369a1',
+                            padding: '3px 10px',
+                            borderRadius: '12px',
+                            fontSize: '0.75rem',
+                            fontWeight: '800'
+                          }}>
+                            {sub.status}
+                          </span>
+                        </div>
+
+                        {sub.submissionLink && (
+                          <div style={{ marginBottom: '10px', fontSize: '0.85rem' }}>
+                            <strong>Artifact / Repo Link: </strong>
+                            <a href={sub.submissionLink} target="_blank" rel="noopener noreferrer" style={{ color: '#0284c7', wordBreak: 'break-all' }}>
+                              {sub.submissionLink}
+                            </a>
+                          </div>
+                        )}
+
+                        {sub.submissionText && (
+                          <div style={{ marginBottom: '16px', fontSize: '0.85rem', color: '#334155', backgroundColor: '#ffffff', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                            {sub.submissionText}
+                          </div>
+                        )}
+
+                        {/* Grading Form */}
+                        <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                          <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#0f172a', marginBottom: '10px' }}>
+                            Evaluation & Grading
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr auto', gap: '12px', alignItems: 'center' }}>
+                            <input
+                              type="text"
+                              placeholder="e.g. 95/100"
+                              value={gradesInput[sub.id]?.grade || ''}
+                              onChange={(e) =>
+                                setGradesInput({
+                                  ...gradesInput,
+                                  [sub.id]: { ...(gradesInput[sub.id] || {}), grade: e.target.value }
+                                })
+                              }
+                              style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Feedback / Rubric remarks..."
+                              value={gradesInput[sub.id]?.feedback || ''}
+                              onChange={(e) =>
+                                setGradesInput({
+                                  ...gradesInput,
+                                  [sub.id]: { ...(gradesInput[sub.id] || {}), feedback: e.target.value }
+                                })
+                              }
+                              style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSaveGrade(sub.id)}
+                              disabled={gradingSubId === sub.id}
+                              className="btn-primary"
+                              style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                            >
+                              {gradingSubId === sub.id ? 'Saving...' : 'Save Grade'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Assignments List */}
           <div style={{ display: 'grid', gap: '20px' }}>
             {assignments.length > 0 ? (
@@ -475,13 +660,13 @@ export default function FacultyPortal({ user }) {
                       <p style={{ margin: 0, color: '#475569', fontSize: '0.9rem', lineHeight: '1.6' }}>{assn.description}</p>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                       <button
-                        onClick={() => alert(`Reviewing submissions for: ${assn.title}\n42 Students Enrolled • 36 Turned In • 6 Missing`)}
-                        className="btn-secondary"
-                        style={{ fontSize: '0.85rem' }}
+                        onClick={() => handleOpenSubmissions(assn)}
+                        className="btn-primary"
+                        style={{ fontSize: '0.85rem', padding: '8px 14px' }}
                       >
-                        Submissions (36)
+                        Submissions ({assn.submissionsCount || 0})
                       </button>
                       <button
                         onClick={() => handleDeleteAssignment(assn.id)}
