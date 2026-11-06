@@ -3,6 +3,7 @@ const Assignment = require('../models/Assignment');
 const Notice = require('../models/Notice');
 const Attendance = require('../models/Attendance');
 const Course = require('../models/Course');
+const Submission = require('../models/Submission');
 
 exports.getMetrics = async (req, res) => {
   try {
@@ -12,6 +13,7 @@ exports.getMetrics = async (req, res) => {
       facultyCount,
       adminCount,
       totalAssignments,
+      totalSubmissions,
       totalNotices,
       totalAttendanceSessions,
       coursesCount,
@@ -22,6 +24,7 @@ exports.getMetrics = async (req, res) => {
       User.countDocuments({ role: 'faculty' }),
       User.countDocuments({ role: 'admin' }),
       Assignment.countDocuments(),
+      Submission.countDocuments().catch(() => 0),
       Notice.countDocuments(),
       Attendance.countDocuments(),
       Course.countDocuments(),
@@ -44,6 +47,7 @@ exports.getMetrics = async (req, res) => {
         facultyCount,
         adminCount,
         totalAssignments,
+        totalSubmissions,
         totalNotices,
         totalAttendanceSessions,
         activeClassrooms: coursesCount || 5,
@@ -82,8 +86,14 @@ exports.getUsers = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Prevent deleting self
+    if (req.user && req.user.userId === id) {
+      return res.status(400).json({ error: 'Cannot delete currently authenticated administrator account' });
+    }
+
     await User.findByIdAndDelete(id);
-    res.json({ message: 'User deleted successfully' });
+    res.json({ message: 'User account removed successfully' });
   } catch (err) {
     console.error('Error deleting user:', err);
     res.status(500).json({ error: 'Failed to delete user' });

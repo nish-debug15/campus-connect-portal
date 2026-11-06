@@ -8,18 +8,28 @@ const protect = (req, res, next) => {
     try {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, JWT_SECRET);
-      
       req.user = decoded;
-      next();
+      return next();
     } catch (error) {
-      console.error(error);
-      res.status(401).json({ error: 'Not authorized, token failed' });
+      console.error('JWT verification error:', error.message);
+      return res.status(401).json({ error: 'Not authorized, token failed' });
     }
   }
 
   if (!token) {
-    res.status(401).json({ error: 'Not authorized, no token' });
+    return res.status(401).json({ error: 'Not authorized, no token provided' });
   }
 };
 
-module.exports = { protect };
+const authorize = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({
+        error: `Forbidden: role '${req.user?.role || 'unauthorized'}' does not have permission to access this resource`
+      });
+    }
+    next();
+  };
+};
+
+module.exports = { protect, authorize };
