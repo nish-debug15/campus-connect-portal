@@ -3,6 +3,7 @@ const Assignment = require('../models/Assignment');
 const Notice = require('../models/Notice');
 const Attendance = require('../models/Attendance');
 const User = require('../models/User');
+const Submission = require('../models/Submission');
 
 // 1. Get Faculty's Courses & Classes
 exports.getCourses = async (req, res) => {
@@ -47,6 +48,17 @@ exports.getCourses = async (req, res) => {
 exports.getAssignments = async (req, res) => {
   try {
     const assignments = await Assignment.find().sort({ createdAt: -1 });
+
+    // Aggregate submission counts per assignment
+    const submissionCounts = await Submission.aggregate([
+      { $group: { _id: '$assignmentId', count: { $sum: 1 } } }
+    ]);
+
+    const countMap = {};
+    submissionCounts.forEach((sc) => {
+      countMap[sc._id.toString()] = sc.count;
+    });
+
     const formatted = assignments.map((a) => ({
       id: a._id.toString(),
       _id: a._id.toString(),
@@ -57,6 +69,7 @@ exports.getAssignments = async (req, res) => {
       points: a.points,
       status: a.status,
       createdBy: a.createdBy,
+      submissionsCount: countMap[a._id.toString()] || 0,
       createdAt: a.createdAt
     }));
     res.json({ assignments: formatted });
@@ -95,6 +108,7 @@ exports.createAssignment = async (req, res) => {
       points: assignment.points,
       status: assignment.status,
       createdBy: assignment.createdBy,
+      submissionsCount: 0,
       createdAt: assignment.createdAt
     };
 
@@ -109,14 +123,68 @@ exports.deleteAssignment = async (req, res) => {
   try {
     const { id } = req.params;
     await Assignment.findByIdAndDelete(id);
-    res.json({ message: 'Assignment deleted successfully' });
+    await Submission.deleteMany({ assignmentId: id });
+    res.json({ message: 'Assignment and related submissions deleted successfully' });
   } catch (err) {
     console.error('Error deleting assignment:', err);
     res.status(500).json({ error: 'Failed to delete assignment' });
   }
 };
 
-// 3. Announcements / Stream
+// 3. Submissions & Grading (Mini Google Classroom)
+exports.getAssignmentSubmissions = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const submissions = await Submission.find({ assignmentId: id }).sort({ submittedAt: -1 });
+    const formatted = submissions.map((s) => ({
+      id: s._id.toString(),
+      _id: s._id.toString(),
+      assignmentId: s.assignmentId.toString(),
+      studentId: s.studentId.toString(),
+      studentName: s.studentName,
+      studentEmail: s.studentEmail,
+      studentUsn: s.studentUsn,
+      submissionText: s.submissionText,
+      submissionLink: s.submissionLink,
+      status: s.status,
+      grade: s.grade,
+      feedback: s.feedback,
+      submittedAt: s.submittedAt
+    }));
+    res.json({ submissions: formatted });
+  } catch (err) {
+    console.error('Error fetching submissions:', err);
+    res.status(500).json({ error: 'Failed to fetch submissions' });
+  }
+};
+
+exports.gradeSubmission = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { grade, feedback } = req.body;
+
+    const submission = await Submission.findByIdAndUpdate(
+      id,
+      {
+        grade: grade || '100/100',
+        feedback: feedback || 'Graded by faculty instructor',
+        status: 'Graded'
+      },
+      { returnDocument: 'after' }
+    );
+
+    if (!submission) {
+      return res.status(404).json({ error: 'Submission not found' });
+    }
+
+    res.json({ message: 'Submission evaluated & graded successfully', submission });
+  } catch (err) {
+    console.error('Error grading submission:', err);
+    res.status(500).json({ error: 'Failed to grade submission' });
+  }
+};
+
+// 4. Announcements / Stream
 exports.postAnnouncement = async (req, res) => {
   try {
     const { title, courseName, description } = req.body;
@@ -152,7 +220,7 @@ exports.postAnnouncement = async (req, res) => {
   }
 };
 
-// 4. Attendance
+// 5. Attendance
 exports.getEnrolledStudents = async (req, res) => {
   try {
     const studentUsers = await User.find({ role: 'student' }).sort({ name: 1 });

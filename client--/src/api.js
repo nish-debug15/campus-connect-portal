@@ -82,6 +82,18 @@ export const classroomAPI = {
   sync: async () => {
     const response = await api.post('/classroom/sync');
     return response.data;
+  },
+  submitAssignment: async (id, data) => {
+    const response = await api.post(`/classroom/assignments/${id}/submit`, data);
+    return response.data;
+  },
+  getSubmission: async (id) => {
+    const response = await api.get(`/classroom/assignments/${id}/submission`);
+    return response.data;
+  },
+  getAttendance: async () => {
+    const response = await api.get('/classroom/attendance');
+    return response.data;
   }
 };
 
@@ -101,6 +113,14 @@ export const facultyAPI = {
   },
   deleteAssignment: async (id) => {
     const response = await api.delete(`/faculty/assignments/${id}`);
+    return response.data;
+  },
+  getAssignmentSubmissions: async (id) => {
+    const response = await api.get(`/faculty/assignments/${id}/submissions`);
+    return response.data;
+  },
+  gradeSubmission: async (id, data) => {
+    const response = await api.post(`/faculty/submissions/${id}/grade`, data);
     return response.data;
   },
   postAnnouncement: async (data) => {

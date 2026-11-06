@@ -4,6 +4,9 @@ const path = require('path');
 const Course = require('../models/Course');
 const Assignment = require('../models/Assignment');
 const Notice = require('../models/Notice');
+const Attendance = require('../models/Attendance');
+const Submission = require('../models/Submission');
+const User = require('../models/User');
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'mock_client_id';
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'mock_client_secret';
@@ -115,28 +118,21 @@ const getDemoData = () => {
       title: 'Capstone Project Phase 1 Architecture Review & Submission Guidelines',
       courseName: 'CS301 - Full Stack Web Development',
       date: formatDate(0),
-      description: 'Submit your architecture diagrams, database schemas, and REST API documentation to the classroom portal before midnight. Evaluation starts tomorrow.'
+      description: 'Submit your architecture diagrams, database schemas, and REST API documentation before midnight.'
     },
     {
       id: 'notice-2',
       title: 'Guest Lecture: Scalable Microservices Architecture with Docker & K8s',
       courseName: 'CS308 - Computer Networks & Security',
       date: formatDate(1),
-      description: 'Industry expert session by AWS Principal Architect this Friday at 2:30 PM in Hall 201. Attendance is mandatory for all sections.'
+      description: 'Industry expert session by AWS Principal Architect this Friday at 2:30 PM in Hall 201.'
     },
     {
       id: 'notice-3',
       title: 'Mid-Semester Lab Exam Schedule & Practical Problem Statements',
       courseName: 'CS304 - Database Management Systems',
       date: formatDate(3),
-      description: 'Review the indexing strategies, B-Trees, and SQL normalization problems shared in the classroom files. Practical exam duration is 2 hours.'
-    },
-    {
-      id: 'notice-4',
-      title: 'Kaggle Benchmark Dataset for Supervised Learning Classification',
-      courseName: 'AI201 - Intro to Machine Learning & Data Science',
-      date: formatDate(5),
-      description: 'The dataset has been uploaded to Google Drive. Submit your baseline Jupyter notebook before next Wednesday with accuracy benchmarks.'
+      description: 'Review the indexing strategies, B-Trees, and SQL normalization problems shared in class files.'
     }
   ];
 
@@ -145,6 +141,7 @@ const getDemoData = () => {
       id: 'assn-1',
       title: 'Sprint 2: RESTful API & Authentication Architecture',
       courseName: 'CS301 - Full Stack Web Development',
+      description: 'Build robust JWT authentication with Express and connect Mongo models.',
       due: formatDueDate(3),
       points: '100 pts',
       status: 'Due Soon'
@@ -153,6 +150,7 @@ const getDemoData = () => {
       id: 'assn-2',
       title: 'Normalization (1NF to BCNF) & SQL Query Optimization Problem Set',
       courseName: 'CS304 - Database Management Systems',
+      description: 'Solve the normalization problem statements and optimize indexed queries.',
       due: formatDueDate(6),
       points: '50 pts',
       status: 'Assigned'
@@ -161,47 +159,14 @@ const getDemoData = () => {
       id: 'assn-3',
       title: 'Wireshark Packet Analysis: TCP Handshake & TLS Decryption',
       courseName: 'CS308 - Computer Networks & Security',
+      description: 'Capture packet traces, inspect TCP 3-way handshakes and write lab observations.',
       due: formatDueDate(9),
       points: '75 pts',
-      status: 'Assigned'
-    },
-    {
-      id: 'assn-4',
-      title: 'Classification Model Evaluation: Confusion Matrix & ROC Curves',
-      courseName: 'AI201 - Intro to Machine Learning & Data Science',
-      due: formatDueDate(12),
-      points: '100 pts',
-      status: 'Assigned'
-    },
-    {
-      id: 'assn-5',
-      title: 'Graph Theory & Dijkstra Shortest Path Proofs',
-      courseName: 'MA202 - Discrete Mathematics & Graph Theory',
-      due: formatDueDate(15),
-      points: '50 pts',
       status: 'Assigned'
     }
   ];
 
-  const customAssignments = (() => {
-    try {
-      const f = path.join(__dirname, '..', 'data', 'assignments.json');
-      return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : [];
-    } catch { return []; }
-  })();
-
-  const customNotices = (() => {
-    try {
-      const f = path.join(__dirname, '..', 'data', 'notices.json');
-      return fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : [];
-    } catch { return []; }
-  })();
-
-  return {
-    courses,
-    notices: [...customNotices, ...notices],
-    assignments: [...customAssignments, ...assignments]
-  };
+  return { courses, notices, assignments };
 };
 
 exports.getConnectUrl = (req, res) => {
@@ -301,12 +266,25 @@ exports.sync = async (req, res) => {
     const allTokens = getStoredTokens();
     const userTokens = allTokens[userId];
 
-    if (!userTokens) {
-      return res.status(401).json({ error: 'Google Classroom not connected' });
-    }
+    // Always fetch student submissions to enrich assignment objects
+    const mySubmissions = await Submission.find({ studentId: userId });
+    const submissionMap = {};
+    mySubmissions.forEach((sub) => {
+      submissionMap[sub.assignmentId.toString()] = {
+        id: sub._id.toString(),
+        status: sub.status,
+        submissionText: sub.submissionText,
+        submissionLink: sub.submissionLink,
+        grade: sub.grade,
+        feedback: sub.feedback,
+        submittedAt: sub.submittedAt
+      };
+    });
 
-    // If user is in demo mode or credentials are not configured, return rich simulation data backed by MongoDB
-    if (userTokens.isDemo || !isConfigured) {
+    // Check if connected with real Google OAuth
+    const isRealOAuth = userTokens && !userTokens.isDemo && isConfigured;
+
+    if (!isRealOAuth) {
       let dbCourses = await Course.find().catch(() => []);
       let dbNotices = await Notice.find().sort({ createdAt: -1 }).catch(() => []);
       let dbAssignments = await Assignment.find().sort({ createdAt: -1 }).catch(() => []);
@@ -336,14 +314,19 @@ exports.sync = async (req, res) => {
         description: n.description
       }));
 
-      const assignments = dbAssignments.map((a) => ({
-        id: a._id.toString(),
-        title: a.title,
-        courseName: a.courseName,
-        due: a.due,
-        points: a.points,
-        status: a.status
-      }));
+      const assignments = dbAssignments.map((a) => {
+        const sub = submissionMap[a._id.toString()] || null;
+        return {
+          id: a._id.toString(),
+          title: a.title,
+          courseName: a.courseName,
+          description: a.description,
+          due: a.due,
+          points: a.points,
+          status: sub ? sub.status : a.status,
+          submission: sub
+        };
+      });
 
       return res.json({
         courses,
@@ -381,7 +364,6 @@ exports.sync = async (req, res) => {
     const activeCourses = courses.slice(0, 5);
 
     for (const course of activeCourses) {
-      // Announcements
       try {
         const annRes = await classroom.courses.announcements.list({
           courseId: course.id,
@@ -402,7 +384,6 @@ exports.sync = async (req, res) => {
         console.error(`Error fetching announcements for ${course.name}:`, e.message);
       }
 
-      // Coursework
       try {
         const cwRes = await classroom.courses.courseWork.list({
           courseId: course.id,
@@ -445,5 +426,142 @@ exports.sync = async (req, res) => {
   } catch (error) {
     console.error('Failed to sync classroom data:', error);
     res.status(500).json({ error: 'Failed to sync classroom data' });
+  }
+};
+
+// 4. Student Assignment Submission Endpoints
+exports.submitAssignment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { submissionText, submissionLink } = req.body;
+    const userId = req.user.userId;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Student user not found' });
+    }
+
+    const assignment = await Assignment.findById(id);
+    if (!assignment) {
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    let submission = await Submission.findOne({ assignmentId: id, studentId: userId });
+
+    if (submission) {
+      submission.submissionText = submissionText !== undefined ? submissionText : submission.submissionText;
+      submission.submissionLink = submissionLink !== undefined ? submissionLink : submission.submissionLink;
+      submission.status = 'Submitted';
+      submission.submittedAt = new Date();
+      await submission.save();
+    } else {
+      submission = await Submission.create({
+        assignmentId: id,
+        studentId: userId,
+        studentName: user.name,
+        studentEmail: user.email,
+        studentUsn: user.usn || '',
+        submissionText: submissionText || '',
+        submissionLink: submissionLink || '',
+        status: 'Submitted',
+        submittedAt: new Date()
+      });
+    }
+
+    const formatted = {
+      id: submission._id.toString(),
+      _id: submission._id.toString(),
+      assignmentId: submission.assignmentId.toString(),
+      status: submission.status,
+      submissionText: submission.submissionText,
+      submissionLink: submission.submissionLink,
+      grade: submission.grade,
+      feedback: submission.feedback,
+      submittedAt: submission.submittedAt
+    };
+
+    res.status(201).json({ message: 'Coursework submitted successfully', submission: formatted });
+  } catch (err) {
+    console.error('Error submitting coursework:', err);
+    res.status(500).json({ error: 'Failed to submit coursework' });
+  }
+};
+
+exports.getAssignmentSubmission = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+    const submission = await Submission.findOne({ assignmentId: id, studentId: userId });
+    res.json({ submission: submission || null });
+  } catch (err) {
+    console.error('Error loading submission:', err);
+    res.status(500).json({ error: 'Failed to load submission' });
+  }
+};
+
+// 5. Dynamic Student Attendance calculation from Attendance collection
+exports.getStudentAttendance = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const user = await User.findById(userId);
+
+    const sessions = await Attendance.find().sort({ date: -1 });
+
+    const courseBreakdown = {};
+    let totalClasses = 0;
+    let attendedClasses = 0;
+
+    sessions.forEach((session) => {
+      const cName = session.courseName;
+      if (!courseBreakdown[cName]) {
+        courseBreakdown[cName] = { total: 0, attended: 0 };
+      }
+
+      const record = session.records.find(
+        (r) =>
+          r.studentId === userId ||
+          (user && user.usn && r.usn === user.usn) ||
+          (user && user.name && r.studentName.toLowerCase() === user.name.toLowerCase())
+      );
+
+      if (record) {
+        courseBreakdown[cName].total += 1;
+        totalClasses += 1;
+        if (record.status === 'Present') {
+          courseBreakdown[cName].attended += 1;
+          attendedClasses += 1;
+        }
+      }
+    });
+
+    const coursesList = Object.keys(courseBreakdown).map((name) => {
+      const data = courseBreakdown[name];
+      const pct = data.total > 0 ? Math.round((data.attended / data.total) * 100) : 100;
+      return {
+        courseName: name,
+        total: data.total,
+        attended: data.attended,
+        percentage: pct
+      };
+    });
+
+    const overallPercentage =
+      totalClasses > 0 ? Math.round((attendedClasses / totalClasses) * 100) : 88;
+
+    res.json({
+      overallPercentage,
+      totalClasses,
+      attendedClasses,
+      courses: coursesList.length > 0 ? coursesList : [
+        { courseName: 'CS301 - Full Stack Web Development', total: 25, attended: 23, percentage: 92 },
+        { courseName: 'CS304 - Database Management Systems', total: 20, attended: 17, percentage: 85 },
+        { courseName: 'CS308 - Computer Networks & Security', total: 25, attended: 22, percentage: 88 },
+        { courseName: 'AI201 - Intro to Machine Learning & Data Science', total: 20, attended: 18, percentage: 90 },
+        { courseName: 'MA202 - Discrete Mathematics & Graph Theory', total: 25, attended: 21, percentage: 84 }
+      ]
+    });
+  } catch (err) {
+    console.error('Error fetching student attendance:', err);
+    res.status(500).json({ error: 'Failed to fetch attendance' });
   }
 };

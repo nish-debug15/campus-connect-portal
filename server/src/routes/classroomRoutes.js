@@ -6,7 +6,10 @@ const {
   disconnect,
   callback,
   status,
-  sync
+  sync,
+  submitAssignment,
+  getAssignmentSubmission,
+  getStudentAttendance
 } = require('../controllers/classroomController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -16,5 +19,12 @@ router.post('/disconnect', protect, disconnect);
 router.get('/callback', callback);
 router.get('/status', protect, status);
 router.post('/sync', protect, sync);
+
+// Student coursework submission routes
+router.post('/assignments/:id/submit', protect, submitAssignment);
+router.get('/assignments/:id/submission', protect, getAssignmentSubmission);
+
+// Student live attendance route
+router.get('/attendance', protect, getStudentAttendance);
 
 module.exports = router;
