@@ -61,6 +61,13 @@ export default function AuthModule({ initialMode = 'login' }) {
     }
   };
 
+  const handleSelectPreloadedUser = (e) => {
+    const val = e.target.value;
+    if (!val) return;
+    const [userEmail, pwd] = val.split('|');
+    setFormData((prev) => ({ ...prev, email: userEmail, password: pwd }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -163,6 +170,48 @@ export default function AuthModule({ initialMode = 'login' }) {
                 >
                   Administrator
                 </button>
+              </div>
+
+              <div style={{ marginTop: '10px' }}>
+                <select
+                  onChange={handleSelectPreloadedUser}
+                  defaultValue=""
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.78rem',
+                    fontWeight: '600',
+                    color: '#334155',
+                    backgroundColor: '#ffffff',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="" disabled>Or pick any preloaded RVU account...</option>
+                  <optgroup label="Student Accounts">
+                    <option value="student@rvu.edu.in|password123">Test Student (student@rvu.edu.in)</option>
+                    <option value="patelnishitkumarbsc24@rvu.edu.in|password123">Nishit Patel - 1RUA24SCS0068 (patelnishitkumarbsc24@rvu.edu.in)</option>
+                    <option value="aarav.sharma@rvu.edu.in|password123">Aarav Sharma - 1RV22CS014 (aarav.sharma@rvu.edu.in)</option>
+                    <option value="diya.reddy@rvu.edu.in|password123">Diya Reddy - 1RV22CS032 (diya.reddy@rvu.edu.in)</option>
+                    <option value="rohan.verma@rvu.edu.in|password123">Rohan Verma - 1RV22CS085 (rohan.verma@rvu.edu.in)</option>
+                    <option value="ananya.deshmukh@rvu.edu.in|password123">Ananya Deshmukh - AI & ML (ananya.deshmukh@rvu.edu.in)</option>
+                    <option value="meera.iyer@rvu.edu.in|password123">Meera Iyer - School of Business (meera.iyer@rvu.edu.in)</option>
+                    <option value="tanvi.joshi@rvu.edu.in|password123">Tanvi Joshi - School of Design (tanvi.joshi@rvu.edu.in)</option>
+                  </optgroup>
+                  <optgroup label="Faculty Instructors">
+                    <option value="faculty@rvu.edu.in|faculty123">Dr. Ramesh Kumar - Web Tech (faculty@rvu.edu.in)</option>
+                    <option value="ananya.sharma@rvu.edu.in|faculty123">Prof. Ananya Sharma - DBMS (ananya.sharma@rvu.edu.in)</option>
+                    <option value="arvind.rao@rvu.edu.in|faculty123">Dr. Arvind Rao - Networks & Security (arvind.rao@rvu.edu.in)</option>
+                    <option value="priya.sundaram@rvu.edu.in|faculty123">Dr. Priya Sundaram - AI/ML (priya.sundaram@rvu.edu.in)</option>
+                    <option value="vikram.nambiar@rvu.edu.in|faculty123">Prof. Vikram Nambiar - UI/UX (vikram.nambiar@rvu.edu.in)</option>
+                  </optgroup>
+                  <optgroup label="University Administration">
+                    <option value="admin@rvu.edu.in|admin123">Campus IT Administrator (admin@rvu.edu.in)</option>
+                    <option value="dean.academics@rvu.edu.in|admin123">Dr. K. S. Sridhar - Academic Dean (dean.academics@rvu.edu.in)</option>
+                    <option value="registrar@rvu.edu.in|admin123">Dr. D. P. Nagaraj - Registrar (registrar@rvu.edu.in)</option>
+                  </optgroup>
+                </select>
               </div>
             </div>
           )}
