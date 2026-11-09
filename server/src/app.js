@@ -45,16 +45,19 @@ if (fs.existsSync(clientDistPath)) {
   });
 }
 
-// Connect DB and Start Server
-const startServer = async () => {
-  await connectDB();
-  await seedDB();
+// Start HTTP listener immediately so cloud health checks and ports open without delay
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Campus Connect Server running on port ${PORT}`);
+});
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-};
-
-startServer();
+// Connect to MongoDB and seed database asynchronously in background
+(async () => {
+  try {
+    await connectDB();
+    await seedDB();
+  } catch (err) {
+    console.error('Database initialization warning:', err.message);
+  }
+})();
 
 module.exports = app;

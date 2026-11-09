@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_for_dev_only';
@@ -10,6 +11,10 @@ exports.register = async (req, res) => {
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ error: 'Name, email, password, and role are required' });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ error: 'Database is currently establishing connection. Please wait a moment and try again.' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -71,6 +76,10 @@ exports.login = async (req, res) => {
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({ error: 'Database is currently establishing connection. Please wait a moment and try again.' });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
