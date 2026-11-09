@@ -87,7 +87,15 @@ export default function AuthModule({ initialMode = 'login' }) {
           role
         });
 
-        saveSession({ token: res.token, user: res.user, role: res.user.role });
+        if (!res || typeof res !== 'object' || !res.token || !res.user) {
+          throw new Error(
+            typeof res === 'string' && res.includes('<!DOCTYPE')
+              ? 'API server unreachable or returned HTML. Please ensure backend is running.'
+              : res?.error || 'Registration failed. Please check your details.'
+          );
+        }
+
+        saveSession({ token: res.token, user: res.user, role: res.user.role || role });
         navigate('/dashboard');
       } else {
         const res = await authAPI.login({
@@ -95,11 +103,23 @@ export default function AuthModule({ initialMode = 'login' }) {
           password: formData.password
         });
 
+        if (!res || typeof res !== 'object' || !res.token || !res.user) {
+          throw new Error(
+            typeof res === 'string' && res.includes('<!DOCTYPE')
+              ? 'API endpoint unreachable or returned HTML. If using Vercel, please check your backend connection.'
+              : res?.error || 'Invalid credentials or server unavailable.'
+          );
+        }
+
         saveSession({ token: res.token, user: res.user, role: res.user.role });
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.response?.data?.error || err.message || "An error occurred during authentication");
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        setError('Server cold-start in progress. Free cloud servers take 30-45 seconds to wake up. Please wait 10 seconds and try again.');
+      } else {
+        setError(err.response?.data?.error || err.message || "An error occurred during authentication");
+      }
     } finally {
       setLoading(false);
     }

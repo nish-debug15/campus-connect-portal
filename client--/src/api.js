@@ -4,7 +4,7 @@ const baseURL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' :
 
 const api = axios.create({
   baseURL,
-  timeout: 10000,
+  timeout: 60000, // 60 seconds to accommodate cloud server cold starts
 });
 
 // Request interceptor to attach JWT token
