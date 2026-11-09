@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router';
-import { authAPI, saveSession, getSession } from '../api';
+import { authAPI, saveSession, getSession, setCustomBaseURL, getBaseURL } from '../api';
 
 export default function AuthModule({ initialMode = 'login' }) {
   const [mode, setMode] = useState(initialMode); // 'login' or 'register'
@@ -25,6 +25,14 @@ export default function AuthModule({ initialMode = 'login' }) {
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  // Backend connection & demo mode states
+  const [backendUrl, setBackendUrl] = useState(() => {
+    return localStorage.getItem('campus_connect_api_url') || '';
+  });
+  const [showBackendConfig, setShowBackendConfig] = useState(false);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [connectionFeedback, setConnectionFeedback] = useState(null);
 
   // Sync mode whenever initialMode prop or location changes
   useEffect(() => {
@@ -116,12 +124,53 @@ export default function AuthModule({ initialMode = 'login' }) {
       }
     } catch (err) {
       if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-        setError('Server cold-start in progress. Free cloud servers take 30-45 seconds to wake up. Please wait 10 seconds and try again.');
+        setError('Server cold-start in progress. Free cloud servers take 30-45 seconds to wake up. You can wait 10 seconds or continue in Instant Demo Mode.');
+        setShowBackendConfig(true);
+      } else if (err.isHtmlResponse || err.message?.includes('unreachable') || err.message?.includes('HTML') || err.message?.includes('Network Error') || err.code === 'ERR_NETWORK') {
+        setError('Cannot reach backend server. If hosted on Vercel, connect your Render backend URL below or continue in Instant Demo Mode.');
+        setShowBackendConfig(true);
       } else {
         setError(err.response?.data?.error || err.message || "An error occurred during authentication");
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInstantDemoAccess = (targetRole = null) => {
+    let effectiveRole = targetRole || role;
+    if (!targetRole) {
+      if (formData.email?.toLowerCase().includes('admin')) effectiveRole = 'admin';
+      else if (formData.email?.toLowerCase().includes('faculty')) effectiveRole = 'faculty';
+      else if (formData.email?.toLowerCase().includes('student')) effectiveRole = 'student';
+    }
+
+    const session = authAPI.loginDemo(effectiveRole);
+    navigate('/dashboard');
+  };
+
+  const handleTestAndSaveBackend = async () => {
+    if (!backendUrl.trim()) {
+      setConnectionFeedback({ success: false, message: 'Please enter a valid backend URL (e.g. https://your-service.onrender.com).' });
+      return;
+    }
+    setTestingConnection(true);
+    setConnectionFeedback(null);
+    try {
+      await authAPI.checkHealth(backendUrl.trim());
+      setCustomBaseURL(backendUrl.trim());
+      setConnectionFeedback({ success: true, message: 'Backend connected successfully! Retrying authentication...' });
+      setError(null);
+      setTimeout(() => {
+        handleSubmit(new Event('submit'));
+      }, 700);
+    } catch (err) {
+      setConnectionFeedback({
+        success: false,
+        message: 'Could not connect to this URL. Please verify your Render service is running and retry.'
+      });
+    } finally {
+      setTestingConnection(false);
     }
   };
 
@@ -239,6 +288,106 @@ export default function AuthModule({ initialMode = 'login' }) {
           {error && (
             <div style={{ color: '#991b1b', backgroundColor: '#fee2e2', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', marginBottom: '18px', textAlign: 'center', fontSize: '0.9rem', fontWeight: '600' }}>
               {error}
+            </div>
+          )}
+
+          {/* Dynamic Backend Connector & Instant Demo Panel */}
+          {showBackendConfig && (
+            <div style={{
+              backgroundColor: '#f8fafc',
+              border: '1.5px solid #cbd5e1',
+              borderRadius: '10px',
+              padding: '16px',
+              marginBottom: '20px',
+              textAlign: 'left'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e293b' }}>
+                  Cloud Backend & Demo Settings
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowBackendConfig(false)}
+                  style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.1rem', fontWeight: 'bold' }}
+                >
+                  ×
+                </button>
+              </div>
+              <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: '#475569', lineHeight: '1.4' }}>
+                If using Vercel, paste your live Render Web Service URL below (e.g. <code>https://campus-connect-xxxx.onrender.com</code>), or explore the portal right now in Instant Demo Mode:
+              </p>
+
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <input
+                  type="text"
+                  placeholder="https://your-service.onrender.com"
+                  value={backendUrl}
+                  onChange={(e) => setBackendUrl(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '8px 10px',
+                    fontSize: '0.82rem',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontFamily: 'monospace'
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={testingConnection}
+                  onClick={handleTestAndSaveBackend}
+                  style={{
+                    padding: '8px 14px',
+                    fontSize: '0.82rem',
+                    fontWeight: '700',
+                    borderRadius: '6px',
+                    backgroundColor: '#0f766e',
+                    color: 'white',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {testingConnection ? 'Testing...' : 'Connect'}
+                </button>
+              </div>
+
+              {connectionFeedback && (
+                <div style={{
+                  fontSize: '0.8rem',
+                  fontWeight: '600',
+                  color: connectionFeedback.success ? '#166534' : '#991b1b',
+                  marginBottom: '10px',
+                  backgroundColor: connectionFeedback.success ? '#dcfce7' : '#fee2e2',
+                  padding: '6px 10px',
+                  borderRadius: '6px'
+                }}>
+                  {connectionFeedback.message}
+                </div>
+              )}
+
+              <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '10px', marginTop: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => handleInstantDemoAccess()}
+                  style={{
+                    width: '100%',
+                    padding: '9px 12px',
+                    borderRadius: '6px',
+                    backgroundColor: '#166534',
+                    color: 'white',
+                    fontWeight: '700',
+                    fontSize: '0.85rem',
+                    border: 'none',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <span>Continue in Standalone Demo Mode (Instant Access)</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -445,6 +594,22 @@ export default function AuthModule({ initialMode = 'login' }) {
               <Link to="/" style={{ color: '#64748b', textDecoration: 'none', fontSize: '0.85rem' }}>
                 ← Back to Campus Home
               </Link>
+            </p>
+            <p style={{ marginTop: '12px' }}>
+              <button
+                type="button"
+                onClick={() => setShowBackendConfig(!showBackendConfig)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748b',
+                  fontSize: '0.78rem',
+                  textDecoration: 'underline',
+                  cursor: 'pointer'
+                }}
+              >
+                {showBackendConfig ? 'Hide Server Connection Settings' : 'Configure Backend Server / Offline Mode'}
+              </button>
             </p>
           </div>
         </div>
