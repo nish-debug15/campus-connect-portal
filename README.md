@@ -79,29 +79,6 @@ The system enforces role-based access across three distinct user roles:
 
 ---
 
-## Preloaded Demo Credentials
-
-The login interface provides one-click credential autofill and account selection for testing:
-
-| Role | Name | Email | Password | Department / USN |
-| :--- | :--- | :--- | :--- | :--- |
-| **Administrator** | Campus IT Administrator | `admin@rvu.edu.in` | `admin123` | Central IT & Academic Governance |
-| **Administrator** | Dr. K. S. Sridhar (Dean) | `dean.academics@rvu.edu.in` | `admin123` | Office of the Academic Dean |
-| **Administrator** | Dr. D. P. Nagaraj (Registrar) | `registrar@rvu.edu.in` | `admin123` | Office of the Registrar |
-| **Faculty** | Dr. Ramesh Kumar | `faculty@rvu.edu.in` | `faculty123` | SoCSE — Web Technologies |
-| **Faculty** | Prof. Ananya Sharma | `ananya.sharma@rvu.edu.in` | `faculty123` | SoCSE — Database Systems |
-| **Faculty** | Dr. Arvind Rao | `arvind.rao@rvu.edu.in` | `faculty123` | SoCSE — Networks & Security |
-| **Faculty** | Dr. Priya Sundaram | `priya.sundaram@rvu.edu.in` | `faculty123` | SoCSE — Machine Learning |
-| **Student** | Test Student | `student@rvu.edu.in` | `password123` | 1RV21CS001 (SoCSE, Year 3) |
-| **Student** | Nishit Patel | `patelnishitkumarbsc24@rvu.edu.in` | `password123` | 1RUA24SCS0068 (SoCSE, Year 2) |
-| **Student** | Aarav Sharma | `aarav.sharma@rvu.edu.in` | `password123` | 1RV22CS014 (SoCSE, Year 3) |
-| **Student** | Diya Reddy | `diya.reddy@rvu.edu.in` | `password123` | 1RV22CS032 (SoCSE, Year 3) |
-| **Student** | Meera Iyer | `meera.iyer@rvu.edu.in` | `password123` | 1RV23BBA045 (School of Business) |
-
-The login interface includes an **Instant Demo Mode** option that runs against a preloaded in-memory dataset if backend services are offline.
-
----
-
 ## Technology Stack
 
 ### Frontend (`client--/`)
@@ -176,33 +153,6 @@ campus-connect-portal/
 ├── vercel.json                    # Root Vercel routing
 └── README.md
 ```
-
----
-
-## Environment Variables
-
-Copy `server/.env.example` to `server/.env`:
-
-```bash
-cp server/.env.example server/.env
-```
-
-| Variable | Required | Default | Description |
-| :--- | :---: | :--- | :--- |
-| `PORT` | No | `5000` | Port for the HTTP server |
-| `NODE_ENV` | No | `development` | Runtime environment (`development` or `production`) |
-| `MONGO_URI` | Yes | `mongodb://127.0.0.1:27017/campus_connect` | MongoDB connection URI |
-| `JWT_SECRET` | Yes | `rv_university_campus_connect_secret_jwt_key_2026` | Secret key for JWT generation and verification |
-| `DEMO_MODE` | No | `true` | Enables classroom simulation mode when OAuth credentials are unset |
-| `GOOGLE_CLIENT_ID` | No | — | Google Cloud OAuth 2.0 Client ID |
-| `GOOGLE_CLIENT_SECRET` | No | — | Google Cloud OAuth 2.0 Client Secret |
-| `GOOGLE_REDIRECT_URI` | No | `http://localhost:5000/api/classroom/callback` | OAuth 2.0 redirect URI |
-
-For the client environment (`client--/.env` or hosting configuration):
-
-| Variable | Required | Description |
-| :--- | :---: | :--- |
-| `VITE_API_URL` | No | Full URL to the API backend (e.g., `https://your-backend.onrender.com/api`). Defaults to relative `/api` in production builds. |
 
 ---
 
